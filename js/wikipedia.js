@@ -29,16 +29,21 @@ async function getRandomPage() {
 
 // Fetches the full HTML of a Wikipedia article.
 // Returns { html, canonicalTitle } — canonicalTitle handles redirects.
+// Normalize title: API expects URL-style (spaces as underscores).
 async function getArticleHTML(pageTitle) {
+  const apiTitle = pageTitle.trim().replace(/\s+/g, '_');
   const response = await fetch(
-    `${WIKI_API}/page/html/${encodeURIComponent(pageTitle)}`,
+    `${WIKI_API}/page/html/${encodeURIComponent(apiTitle)}`,
     { headers: WIKI_HEADERS }
   );
+  if (!response.ok) {
+    throw new Error(`Wikipedia returned ${response.status} for "${pageTitle}"`);
+  }
   // Handle redirects: canonical title is in the Content-Location header
   const canonicalPath = response.headers.get('content-location');
   const canonicalTitle = canonicalPath
     ? decodeURIComponent(canonicalPath.split('/').pop())
-    : pageTitle;
+    : apiTitle;
   return {
     html: await response.text(),
     canonicalTitle
@@ -46,42 +51,49 @@ async function getArticleHTML(pageTitle) {
 }
 
 
-// Renders an article into the #article-container div.
+// Renders an article into the #article-frame iframe.
 // Intercepts internal Wikipedia links to call navigateTo() instead.
 // navigateCallback is a function(pageTitle) provided by game.js
 async function loadArticle(pageTitle, navigateCallback) {
   const { html, canonicalTitle } = await getArticleHTML(pageTitle);
-  const container = document.getElementById('article-container');
-  container.innerHTML = html;
+  const iframe = document.getElementById('article-frame');
+  const doc = iframe.contentDocument;
 
+  doc.open();
+  // Use API HTML as-is (it already has <base href="//en.wikipedia.org/wiki/">). No double-wrapping.
+  doc.write(html);
+  doc.close();
 
   // Strip script tags — we don't want Wikipedia's JS running
-  container.querySelectorAll('script').forEach(el => el.remove());
+  doc.querySelectorAll('script').forEach(el => el.remove());
   // Strip edit section links — not relevant in our game
-  container.querySelectorAll('.mw-editsection').forEach(el => el.remove());
+  doc.querySelectorAll('.mw-editsection').forEach(el => el.remove());
   // Strip references section for cleaner reading
-  container.querySelectorAll('.reflist').forEach(el => el.remove());
+  doc.querySelectorAll('.reflist').forEach(el => el.remove());
 
-
-  // Intercept all anchor links
-  container.querySelectorAll('a[href]').forEach(link => {
-    const href = link.getAttribute('href');
-    // Wikipedia internal links start with './'
-    if (href && href.startsWith('./')) {
-      const targetTitle = decodeURIComponent(href.slice(2)).split('#')[0];
-      if (!targetTitle) return; // Anchor-only link, ignore
+  // Intercept all anchor links inside the iframe so clicks call navigateCallback (count as moves)
+  doc.querySelectorAll('a[href]').forEach(link => {
+    const href = link.getAttribute('href') || '';
+    let targetTitle = null;
+    if (href.startsWith('./')) {
+      targetTitle = decodeURIComponent(href.slice(2)).split('#')[0].trim();
+    } else if (href.includes('/wiki/')) {
+      targetTitle = decodeURIComponent(href.replace(/^.*\/wiki\//, '').split('#')[0].trim());
+    } else if (!href.startsWith('http') && !href.startsWith('//') && !href.startsWith('#') && !href.startsWith('mailto:')) {
+      targetTitle = decodeURIComponent(href.split('#')[0].trim());
+    }
+    if (targetTitle) {
       link.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         navigateCallback(targetTitle);
       });
       link.style.cursor = 'pointer';
     } else {
-      // External links open in new tab, not counted as clicks
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
     }
   });
-
 
   // Return canonicalTitle so game.js can update Firebase if redirected
   return canonicalTitle;

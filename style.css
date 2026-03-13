@@ -82,21 +82,21 @@ input {
 #target-display { font-weight: bold; font-size: 16px; }
 
 
-/* Article container */
+/* Article container and iframe */
 #article-container {
   max-width: 860px;
   margin: 0 auto;
   padding: 24px;
-  line-height: 1.7;
 }
 
-
-/* Make Wikipedia article links look clickable */
-#article-container a[href] {
-  color: #0645ad;
-  text-decoration: underline;
+#article-frame {
+  display: block;
+  width: 100%;
+  min-height: 70vh;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
 }
-#article-container a[href]:hover { color: #0f3460; }
 
 
 /* Waiting overlay */
