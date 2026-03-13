@@ -1,0 +1,57 @@
+[debug] [2026-03-13T19:48:12.841Z] ----------------------------------------------------------------------
+[debug] [2026-03-13T19:48:12.843Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\kiero\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2026-03-13T19:48:12.844Z] CLI Version:   15.10.0
+[debug] [2026-03-13T19:48:12.844Z] Platform:      win32
+[debug] [2026-03-13T19:48:12.844Z] Node Version:  v21.7.2
+[debug] [2026-03-13T19:48:12.844Z] Time:          Fri Mar 13 2026 19:48:12 GMT+0000 (Greenwich Mean Time)
+[debug] [2026-03-13T19:48:12.845Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\kiero\Documents\GitHub\wikiracer
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2026-03-13T19:48:23.595Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-13T19:48:23.596Z] > authorizing via signed-in user (kieronoates11@gmail.com)
+[debug] [2026-03-13T19:48:23.597Z] Checked if tokens are valid: true, expires at: 1773434887200
+[debug] [2026-03-13T19:48:23.597Z] Checked if tokens are valid: true, expires at: 1773434887200
+[debug] [2026-03-13T19:48:23.598Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2026-03-13T19:48:24.082Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-03-13T19:48:24.082Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] 
+=== Hosting Setup
+[debug] [2026-03-13T19:48:26.612Z] Checked if tokens are valid: true, expires at: 1773434887200
+[debug] [2026-03-13T19:48:26.612Z] Checked if tokens are valid: true, expires at: 1773434887200
+[debug] [2026-03-13T19:48:26.612Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/wikiracer-79f05 [none]
+[debug] [2026-03-13T19:48:26.828Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/wikiracer-79f05 200
+[debug] [2026-03-13T19:48:26.829Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/wikiracer-79f05 {"projectId":"wikiracer-79f05","projectNumber":"7187172629","displayName":"wikiracer","name":"projects/wikiracer-79f05","resources":{"hostingSite":"wikiracer-79f05"},"state":"ACTIVE","etag":"1_9aeec600-fedf-4143-bb09-915dc0f6a7b9"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
+[debug] [2026-03-13T19:49:20.956Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\kiero\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:519:28)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1125:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:264:20)
+    at ReadStream.emit (node:events:531:35)
+    at emitKeys (node:internal/readline/utils:371:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+    at ReadStream.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:559:12)
+[error] 
+[error] Error: An unexpected error has occurred.

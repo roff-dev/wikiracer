@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikiracer</title>
+</head>
+<body>
+    <div id="app">
+        <h1>WikiRacer</h1>
+        <p>Race your friend through Wikipedia. First to the target page wins.</p>
+    
+    
+        <!-- Create Room section -->
+        <div id="create-section">
+          <button id="create-btn">Create Room</button>
+        </div>
+    
+    
+        <!-- Join Room section -->
+        <div id="join-section">
+          <input id="room-code-input" type="text" placeholder="Enter room code" maxlength="6">
+          <button id="join-btn">Join Room</button>
+        </div>
+    
+    
+        <!-- Status messages -->
+        <div id="status-message"></div>
+      </div>
+    
+
+
+
+
+<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+
+<script src="js/wikipedia.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/lobby.js"></script>   <!-- index.html only -->
+<script src="js/game.js"></script>    <!-- game.html only -->
+
+</body>
+</html>
