@@ -1,0 +1,122 @@
+/* style.css */
+
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f0f4f8;
+  color: #1a1a2e;
+}
+
+
+/* CRITICAL: This class hides/shows all panels */
+.hidden { display: none !important; }
+
+
+.panel {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 32px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+
+h1, h2 { margin-bottom: 16px; }
+p { margin-bottom: 12px; color: #555; }
+
+
+button {
+  padding: 12px 28px;
+  font-size: 16px;
+  background: #0f3460;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 8px;
+}
+button:hover { background: #16213e; }
+button:disabled { background: #aaa; cursor: not-allowed; }
+
+
+input {
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  width: 200px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+
+
+/* Countdown */
+#countdown-number {
+  font-size: 120px;
+  font-weight: bold;
+  color: #0f3460;
+  line-height: 1;
+}
+
+
+/* HUD bar */
+#hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #1a1a2e;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-size: 14px;
+}
+
+
+#target-display { font-weight: bold; font-size: 16px; }
+
+
+/* Article container */
+#article-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+  line-height: 1.7;
+}
+
+
+/* Make Wikipedia article links look clickable */
+#article-container a[href] {
+  color: #0645ad;
+  text-decoration: underline;
+}
+#article-container a[href]:hover { color: #0f3460; }
+
+
+/* Waiting overlay */
+#waiting-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  z-index: 200;
+}
+
+
+/* Results */
+#result-headline {
+  font-size: 32px;
+  color: #0f3460;
+  margin-bottom: 24px;
+}
+#result-details p { font-size: 18px; margin-bottom: 8px; }

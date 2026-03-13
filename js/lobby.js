@@ -1,6 +1,6 @@
 // js/lobby.js — Room creation, joining, and ready-up logic
 
-
+console.log('lobby.js loaded');
 // ── Helpers ───────────────────────────────────────────────────────────
 
 

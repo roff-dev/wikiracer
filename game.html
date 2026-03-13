@@ -4,17 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wikiracer</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <div id="lobby-panel" class="panel hidden">
+        <h2>Waiting for opponent...</h2>
+        <p id="room-code-display"></p>
+        <p id="pages-display"></p>
+        <p id="opponent-status"></p>
+        <button id="ready-btn">I'm Ready!</button>
+      </div>
+    
+    
+      <!-- COUNTDOWN PANEL: shown when state === 'countdown' -->
+      <div id="countdown-panel" class="panel hidden">
+        <h2>Get Ready!</h2>
+        <div id="countdown-number">3</div>
+      </div>
+    
+    
+      <!-- GAME PANEL: shown when state === 'playing' -->
+      <div id="game-panel" class="panel hidden">
+        <!-- HUD bar at the top -->
+        <div id="hud">
+          <div id="target-display">Target: <span id="target-title"></span></div>
+          <div id="my-stats">
+            You: <span id="my-clicks">0</span> clicks |
+            <span id="timer-display">00:00</span>
+          </div>
+          <div id="opponent-stats">
+            Opponent: <span id="opp-clicks">0</span> clicks |
+            <span id="opp-timer">00:00</span>
+          </div>
+        </div>
+        <!-- Wikipedia article renders here -->
+        <div id="article-container"></div>
+        <!-- Waiting overlay (shown when this player finishes first) -->
+        <div id="waiting-overlay" class="hidden">
+          <p>You finished! Waiting for opponent...</p>
+        </div>
+      </div>
+    
+    
+      <!-- RESULTS PANEL: shown when state === 'finished' -->
+      <div id="results-panel" class="panel hidden">
+        <h2 id="result-headline"></h2>
+        <div id="result-details"></div>
+        <button id="play-again-btn">Play Again</button>
+      </div>
+    
+
+
+
+
+
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
-
-<script src="js/firebase-config.js"></script>
-
-<script src="js/wikipedia.js"></script>
-<script src="js/timer.js"></script>
-<script src="js/lobby.js"></script>   <!-- index.html only -->
-<script src="js/game.js"></script>    <!-- game.html only -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/wikipedia.js"></script>
+    <script src="js/timer.js"></script>
+      
+    <script src="js/game.js"></script>    
 </body>
 </html>
