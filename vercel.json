@@ -1,6 +1,13 @@
-{
+
+  {
     "rewrites": [
       { "source": "/game", "destination": "/game.html" }
+    ],
+    "crons": [
+      {
+        "path": "/api/cleanup",
+        "schedule": "0 3 * * *"
+      }
     ]
   }
-  
+    
