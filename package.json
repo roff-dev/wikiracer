@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "svelte-check --fail-on-warnings && tsc -p worker && vite build",
     "preview": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "map:build": "node pipeline/download.mjs && node --max-old-space-size=14000 pipeline/graph.mjs && node --max-old-space-size=14000 pipeline/encode.mjs && node --max-old-space-size=12000 pipeline/pools.mjs",
+    "map:publish": "node pipeline/publish.mjs"
   },
   "dependencies": {
     "@fontsource-variable/mona-sans": "5.3.0",
