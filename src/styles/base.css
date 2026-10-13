@@ -1,0 +1,52 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  font: 450 var(--size-16) / 1.5 var(--font);
+  font-stretch: var(--stretch-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.wordmark {
+  font-weight: 700;
+  font-stretch: 112%;
+  text-decoration: none;
+}
+
+.page {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: calc(24px + env(safe-area-inset-top)) var(--gutter) 48px;
+}
+
+.page h1 {
+  margin: 48px 0 0;
+  font: 780 var(--size-display) / 0.95 var(--font);
+  font-stretch: var(--stretch-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}

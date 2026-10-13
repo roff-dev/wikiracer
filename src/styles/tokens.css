@@ -1,0 +1,86 @@
+/* Design tokens (spec §4.2–4.3). Light by default, dark from the system or the menu's choice. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-sunk: #f1f2f6;
+  --ink: #161925;
+  --ink-2: #5b6072;
+  --signal: #0a7a57;
+  --flare: #d1246b;
+  --link: #3a2ef0;
+  --line: #dee1e9;
+  --on-signal: #ffffff;
+  /* The reveal canvas is dark in both themes */
+  --void: #07080f;
+
+  --font: 'Mona Sans Variable', system-ui, sans-serif;
+  --stretch-display: 125%;
+  --stretch-heading: 112%;
+  --stretch-ui: 100%;
+  --stretch-data: 87.5%;
+
+  /* Major third from 16 px */
+  --size-13: 0.8125rem;
+  --size-16: 1rem;
+  --size-20: 1.25rem;
+  --size-25: 1.5625rem;
+  --size-31: 1.9375rem;
+  --size-39: 2.4375rem;
+  --size-49: 3.0625rem;
+  --size-61: 3.8125rem;
+  --size-76: 4.75rem;
+  --size-95: 5.9375rem;
+  --size-display: clamp(2.6rem, 11vw, 5.9rem);
+
+  --gutter: 16px;
+  --measure: 68ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0e1019;
+    --bg-sunk: #171a26;
+    --ink: #eceef5;
+    --ink-2: #a0a6b8;
+    --signal: #4fd8a4;
+    --flare: #ff74ac;
+    --link: #8f8bff;
+    --line: #2a2e3d;
+    --on-signal: #0e1019;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0e1019;
+  --bg-sunk: #171a26;
+  --ink: #eceef5;
+  --ink-2: #a0a6b8;
+  --signal: #4fd8a4;
+  --flare: #ff74ac;
+  --link: #8f8bff;
+  --line: #2a2e3d;
+  --on-signal: #0e1019;
+}
+
+/* Wide-gamut screens: same lightness (so contrast holds), a little more chroma */
+@media (color-gamut: p3) {
+  :root {
+    --signal: oklch(51.4% 0.136 164.4);
+    --flare: oklch(56.9% 0.239 3);
+    --link: oklch(47.9% 0.289 272.4);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --signal: oklch(79.4% 0.171 164.3);
+      --flare: oklch(73.9% 0.208 357.1);
+      --link: oklch(69.2% 0.197 282.7);
+    }
+  }
+  :root[data-theme='dark'] {
+    --signal: oklch(79.4% 0.171 164.3);
+    --flare: oklch(73.9% 0.208 357.1);
+    --link: oklch(69.2% 0.197 282.7);
+  }
+}
