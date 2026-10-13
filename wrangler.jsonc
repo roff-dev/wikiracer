@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wikiracer",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash",
+    // Every other path is a static asset served without running the Worker
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "COURSE", "class_name": "Course" }]
+  },
+  // The Free plan offers SQLite-backed Durable Objects only
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Course"] }],
+  "observability": { "enabled": true }
+}
