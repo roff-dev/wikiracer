@@ -386,8 +386,11 @@ export class MapReader {
         this.requests++;
         const res = await this.fetchFn(this.chunkUrl(table, k), { headers: { Range: `bytes=${from}-${to - 1}` }, signal });
         if (res.status === 206) {
-          const m = /^bytes (\d+)-(\d+)\/(\d+|\*)$/.exec(res.headers.get('Content-Range') ?? '');
-          if (m && Number(m[1]) === from && Number(m[2]) === to - 1 && (m[3] === '*' || Number(m[3]) >= to)) {
+          // GitHub Pages doesn't expose Content-Range cross-origin, so when it reads as null only the
+          // body length is checked; a same-origin or exposing host gets the full check.
+          const range = res.headers.get('Content-Range');
+          const m = range === null ? null : /^bytes (\d+)-(\d+)\/(\d+|\*)$/.exec(range);
+          if (range === null || (m && Number(m[1]) === from && Number(m[2]) === to - 1 && (m[3] === '*' || Number(m[3]) >= to))) {
             const body = new Uint8Array(await res.arrayBuffer());
             if (body.length === to - from) return body;
           } else await res.body?.cancel();
