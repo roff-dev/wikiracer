@@ -7,10 +7,10 @@
  "chunkBytes": 50331648,
  "tkeyBlockBytes": 16384,
  "sites": [
-  "https://roff-dev.github.io/wikiracer-map-1/",
-  "https://roff-dev.github.io/wikiracer-map-2/",
-  "https://roff-dev.github.io/wikiracer-map-3/",
-  "https://roff-dev.github.io/wikiracer-map-4/"
+  "https://wikiracer-map.github.io/map-1/",
+  "https://wikiracer-map.github.io/map-2/",
+  "https://wikiracer-map.github.io/map-3/",
+  "https://wikiracer-map.github.io/map-4/"
  ],
  "files": {
   "out": [

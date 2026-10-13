@@ -12,8 +12,8 @@ import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, rmSync, sta
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { newestWorkDir } from './lib/graph.mjs';
+import { OWNER, SITES } from './lib/sites.mjs';
 
-const OWNER = 'roff-dev';
 const PROBE_EVERY = 20_000;
 const PROBE_LIMIT = 20 * 60_000;
 const BANNED = /claude|anthropic|co-authored|generated with|ai-generated|spec|phase|checkpoint|workbench|\bwe\b|\bwe're\b|\bour\b|\bus\b|the team/i;
@@ -30,6 +30,7 @@ const log = (...a) => console.log(((Date.now() - t0) / 1000).toFixed(0).padStart
 
 const map = JSON.parse(readFileSync(join(root, 'public', 'map.json'), 'utf8'));
 const meta = JSON.parse(readFileSync(join(mapDir, 'meta.json'), 'utf8'));
+if (map.sites.join() !== SITES.join()) throw new Error('public/map.json names other data sites; rerun encode.mjs');
 if (meta.run !== map.version) throw new Error(`${mapDir} holds ${meta.run} but public/map.json is ${map.version}; rerun encode.mjs`);
 
 const dumpDay = new Date(map.dumpDate + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -44,11 +45,11 @@ for (const [table, owners] of Object.entries(map.files)) {
   });
 }
 
-const README = `# ${'{repo}'}
+const README = `# Wikiracer map, part {part} of ${map.sites.length}
 
 The link map behind [Wikiracer](https://wikiracer.kieronoates.workers.dev/). Built from the English Wikipedia dump of ${dumpDay}.
 
-This repo only serves files for the site's shortest-route search, which reads them in small pieces with HTTP Range requests. The code that builds them lives in the [wikiracer](https://github.com/${OWNER}/wikiracer) repo, under \`pipeline/\`.
+This repo only serves files for the site's shortest-route search, which reads them in small pieces with HTTP Range requests. The code that builds them lives in the [wikiracer](https://github.com/roff-dev/wikiracer) repo, under \`pipeline/\`.
 
 Each version sits in its own folder (\`v${map.version}/\`) and replaces the previous one when I refresh the map.
 `;
@@ -70,7 +71,7 @@ function build(s) {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(join(dir, `v${map.version}`), { recursive: true });
   writeFileSync(join(dir, '.nojekyll'), '');
-  writeFileSync(join(dir, 'README.md'), README.replace('{repo}', repo));
+  writeFileSync(join(dir, 'README.md'), README.replace('{part}', s + 1));
   writeFileSync(join(dir, 'LICENSE'), LICENSE);
   // Hard links: the repo needs the files on disk for git, not a second 0.86 GB copy.
   for (const f of placed[s]) linkSync(join(mapDir, f.name), join(dir, `v${map.version}`, f.name));

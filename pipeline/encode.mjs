@@ -14,9 +14,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { encodeMap, manifest, placeFiles } from './lib/encode.mjs';
 import { loadGraph, newestWorkDir } from './lib/graph.mjs';
+import { SITES } from './lib/sites.mjs';
 
-// GitHub Pages sites of the four data repos (spec §7); chunk URL = site + v<run>/ + file name.
-const SITES = [1, 2, 3, 4].map((k) => `https://roff-dev.github.io/wikiracer-map-${k}/`);
 const SITE_LIMIT = 0.95e9; // Pages allows 1 GB; past this the step-up is a fifth site (§7)
 
 const args = process.argv.slice(2);
