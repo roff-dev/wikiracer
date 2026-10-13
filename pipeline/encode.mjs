@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { ChunkReader, ChunkWriter } from './lib/chunks.mjs';
 import { loadGraph, newestWorkDir } from './lib/graph.mjs';
+import { bfsRank } from './lib/renumber.mjs';
 import { SlotPacker, slotIndexDeltas } from './lib/slots.mjs';
 import { vlen, writeList, writeVarint } from './lib/varint.mjs';
 import { readList, readVarint } from '../src/search/codec.ts';
@@ -45,33 +46,8 @@ rmSync(mapDir, { recursive: true, force: true });
 mkdirSync(mapDir, { recursive: true });
 log(`graph ${run}: N ${N}, E ${g.meta.E}`);
 
-// ---------- BFS renumbering (§5.4 "Node ids"): roots by in-degree (desc, ties by id), each
-// component breadth-first over out-links then in-links in CSR order.
-const rank = new Int32Array(N).fill(-1);
-if (N >= 2 ** 23) throw new Error('N past 2^23: widen the degree sort key');
-{
-  const byDeg = new Float64Array(N);
-  // key = (2^22 - in-degree) * 2^23 + id stays below 2^45, exact in a float64
-  for (let i = 0; i < N; i++) {
-    const d = inOff[i + 1] - inOff[i];
-    if (d >= 2 ** 22) throw new Error('in-degree past 2^22: widen the degree sort key');
-    byDeg[i] = (2 ** 22 - d) * 2 ** 23 + i;
-  }
-  byDeg.sort();
-  const queue = new Int32Array(N);
-  let next = 0, head = 0, tail = 0;
-  for (let r = 0; r < N; r++) {
-    const root = byDeg[r] % 2 ** 23; // the low 23 bits hold the id
-    if (rank[root] >= 0) continue;
-    rank[root] = next++; queue[tail++] = root;
-    while (head < tail) {
-      const u = queue[head++];
-      for (let k = outOff[u]; k < outOff[u + 1]; k++) { const v = out[k]; if (rank[v] < 0) { rank[v] = next++; queue[tail++] = v; } }
-      for (let k = inOff[u]; k < inOff[u + 1]; k++) { const v = inAdj[k]; if (rank[v] < 0) { rank[v] = next++; queue[tail++] = v; } }
-    }
-  }
-  if (next !== N) fail(`BFS numbered ${next} of ${N}`);
-}
+// ---------- BFS renumbering (§5.4 "Node ids")
+const rank = bfsRank(g);
 const inv = new Int32Array(N);
 for (let i = 0; i < N; i++) inv[rank[i]] = i;
 log('bfs renumbering');
