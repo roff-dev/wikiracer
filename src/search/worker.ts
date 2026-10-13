@@ -53,7 +53,7 @@ export function createHost(post: Post, opts: HostOptions) {
         },
       });
       if (!live()) return;
-      const transfer = out.dag ? [out.dag.ids.buffer, out.dag.pos.buffer, out.dag.through.buffer, out.dag.edges.buffer] : [];
+      const transfer = out.dag ? [out.dag.ids.buffer, out.dag.meeting.buffer, out.dag.pos.buffer, out.dag.through.buffer, out.dag.edges.buffer] : [];
       post(
         { kind: 'done', searchId: m.searchId, distance: out.distance, pathCount: out.pathCount, explored: out.explored, fetchedBytes: run.meter.used, dag: out.dag, featured: out.featured },
         transfer,

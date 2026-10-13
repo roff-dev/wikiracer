@@ -153,7 +153,10 @@ function record(s, t) {
   const dagNodes = bfs.dag(res, s, t);
   const route = bfs.featured(dagNodes, s, t, rank);
   const angle = new Map([[s, 0], [t, 0]]);
-  const out = { side: [0, 1], depth: [0, 0], angle: [0, 0], parentAngle: [0, 0] };
+  // flags: bit 0 on a shortest route (DAG), bit 1 a meeting article
+  const meet = new Set(res.meet);
+  const flag = (v) => (dagNodes.has(v) ? 1 : 0) | (meet.has(v) ? 2 : 0);
+  const out = { id: [rank[s], rank[t]], side: [0, 1], depth: [0, 0], angle: [0, 0], parentAngle: [0, 0], flags: [flag(s), flag(t)] };
   let remaining = DEMO_BUDGET - 2;
   res.levels.forEach((lvl, i) => {
     const met = i === res.levels.length - 1;
@@ -165,7 +168,7 @@ function record(s, t) {
       const a = childAngle(rank[v], lvl.depth, pa);
       angle.set(v, a);
       if (!dagNodes.has(v) && !isDrawn(rank[v], k, n)) continue;
-      out.side.push(lvl.side); out.depth.push(lvl.depth); out.angle.push(a); out.parentAngle.push(pa);
+      out.id.push(rank[v]); out.side.push(lvl.side); out.depth.push(lvl.depth); out.angle.push(a); out.parentAngle.push(pa); out.flags.push(flag(v));
       drawn++;
     }
     remaining = Math.max(0, remaining - drawn);
@@ -188,8 +191,12 @@ for (const p of byLabel.medium) {
     k: p.k,
     explored: r.res.explored,
     route: r.route.map(title),
+    // map ids of the route's stops, so the replay can place them
+    routeIds: r.route.map((v) => rank[v]),
     nodes: {
       count: r.out.side.length,
+      id: b64(Int32Array, r.out.id),
+      flags: b64(Uint8Array, r.out.flags),
       side: b64(Uint8Array, r.out.side),
       depth: b64(Uint8Array, r.out.depth),
       angle: b64(Float32Array, r.out.angle),

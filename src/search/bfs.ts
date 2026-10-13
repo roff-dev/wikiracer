@@ -184,7 +184,7 @@ export async function runSearch(state: SearchState, req: SearchRequest, hooks: S
     hooks.onNodes(side, 0, Int32Array.of(root), Float32Array.of(0), Float32Array.of(0));
   }
   if (s === t) {
-    const dag: Dag = { ids: Int32Array.of(s), pos: Uint8Array.of(0), through: Float64Array.of(1), edges: new Int32Array(0) };
+    const dag: Dag = { ids: Int32Array.of(s), meeting: Int32Array.of(s), pos: Uint8Array.of(0), through: Float64Array.of(1), edges: new Int32Array(0) };
     return { distance: 0, pathCount: 1, explored: 1, dag, featured: [s], sampled: 1 };
   }
   const levels: [Int32Array[], Int32Array[]] = [[Int32Array.of(s)], [Int32Array.of(t)]];
@@ -375,6 +375,7 @@ async function recoverDag(st: SearchState, levels: [Int32Array[], Int32Array[]],
   }
   return {
     ids: Int32Array.from(ids),
+    meeting: Int32Array.from(meet),
     pos: Uint8Array.from(pos),
     through: Float64Array.from(ids, (_, i) => fromS[i]! * toT[i]!),
     edges: Int32Array.from(edges),

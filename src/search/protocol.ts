@@ -9,9 +9,11 @@ export interface TitleHit {
 }
 
 // The shortest-route DAG (§3.3 step 5). Node i is ids[i] at distance pos[i] from the start, with
-// through[i] shortest routes passing through it; edges are pairs of node indexes (from, to).
+// through[i] shortest routes passing through it; edges are pairs of node indexes (from, to);
+// meeting holds the ids where the two fronts met.
 export interface Dag {
   ids: Int32Array;
+  meeting: Int32Array;
   pos: Uint8Array;
   through: Float64Array;
   edges: Int32Array;
