@@ -1,4 +1,4 @@
-// Step 2 of the map pipeline (spec §5.7, §9 S2): the English Wikipedia article link graph from
+// Step 2 of the map pipeline: the English Wikipedia article link graph from
 // the SQL dumps, written as CSR arrays.
 //
 //   node --max-old-space-size=14000 pipeline/graph.mjs [--dumps <dir>] [--out <dir>]
@@ -7,7 +7,7 @@
 // run.json); --out defaults to pipeline/work/graph-<run>/. About 13.5 minutes and ~8 GB RAM.
 //
 // Nodes: non-redirect namespace-0 pages. Edges: pagelinks from an article to an existing article,
-// with links to redirects resolved to their target (link rule R1, spec §3.4). Deduplicated, no
+// with links to redirects resolved to their target (link rule R1). Deduplicated, no
 // self-links.
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, writeFileSync, writeSync } from 'node:fs';
 import { dirname, join } from 'node:path';

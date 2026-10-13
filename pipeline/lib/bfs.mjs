@@ -1,4 +1,4 @@
-// In-memory bidirectional BFS over the CSR graph with shortest-route counts (spec §3.3, §5.4), for
+// In-memory bidirectional BFS over the CSR graph with shortest-route counts, for
 // measuring pairs (d, k) and recording the demo.
 //
 // Each step expands one side's whole frontier: the side whose frontier has fewer links to follow.
@@ -105,7 +105,7 @@ export function makeSearch({ N, outOff, out, inOff, inAdj }) {
     return nodes;
   }
 
-  // The featured route (§5.4): from s, step to the DAG successor that carries the most shortest
+  // The featured route: from s, step to the DAG successor that carries the most shortest
   // routes (fromS * toT); ties go to the lowest map id.
   function featured(nodes, s, t, rank) {
     const route = [s];

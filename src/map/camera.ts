@@ -1,4 +1,4 @@
-// The reveal's camera (spec §5.6 "Layout"): fits the drawn bounds with a critically damped spring.
+// The reveal's camera: fits the drawn bounds with a critically damped spring.
 // No pan or zoom; the result panel holds the detail.
 
 export interface Bounds {

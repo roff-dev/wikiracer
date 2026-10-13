@@ -1,4 +1,4 @@
-// Views of the shortest-route DAG for the result panel (spec §3.3 "All shortest routes"): columns
+// Views of the shortest-route DAG for the result panel: columns
 // by distance, the articles on routes through one chosen article, and another route that avoids
 // a link that's gone from today's Wikipedia.
 import type { Dag } from './protocol.ts';
@@ -37,7 +37,7 @@ export function throughNode(dag: Dag, via: number): Set<number> {
   return out;
 }
 
-// Routes through `via` (§3.3: tapping a chip filters to them): the product of the routes reaching
+// Routes through `via`: the product of the routes reaching
 // it from the start and leaving it for the finish is dag.through[via] already.
 export const routesThrough = (dag: Dag, via: number) => dag.through[via]!;
 

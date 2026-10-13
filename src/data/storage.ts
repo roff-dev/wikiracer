@@ -1,4 +1,4 @@
-// localStorage behind try/catch (spec §3.8, §10.4): blocked or full storage turns these features
+// localStorage behind try/catch: blocked or full storage turns these features
 // off silently, and every page still renders without them.
 
 export function readJson<T>(key: string, fallback: T): T {
@@ -23,7 +23,7 @@ const FINISHED = 'wikiracer.finished';
 // A course is its start and finish titles, in underscore form
 export const courseKey = (from: string, to: string) => `${from}|${to}`;
 
-// Courses this browser has finished (§3.8): a shared result shows its routes straight away for them.
+// Courses this browser has finished: a shared result shows its routes straight away for them.
 export function hasFinished(from: string, to: string): boolean {
   return readJson<string[]>(FINISHED, []).includes(courseKey(from, to));
 }

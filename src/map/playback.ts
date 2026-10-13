@@ -1,4 +1,4 @@
-// Birth times for the reveal (spec §3.3 "Streaming", §5.6 "Animation"). Buffered levels are
+// Birth times for the reveal. Buffered levels are
 // re-timed so the fronts spread over about 3 s whatever the network did; a live search staggers
 // each level as it arrives at no more than 8,000 nodes a second. Within a level, nodes are born
 // in hash order, so the level spreads as a ring rather than sweeping round.

@@ -1,4 +1,4 @@
-// Messages between the page and the search worker (spec §5.3 "Worker protocol"). Every message
+// Messages between the page and the search worker. Every message
 // carries the id it answers; the page drops any whose id is stale.
 
 export type Side = 0 | 1; // 0: forward from the start, 1: backward from the finish
@@ -8,7 +8,7 @@ export interface TitleHit {
   id: number;
 }
 
-// The shortest-route DAG (§3.3 step 5). Node i is ids[i] at distance pos[i] from the start, with
+// The shortest-route DAG. Node i is ids[i] at distance pos[i] from the start, with
 // through[i] shortest routes passing through it; edges are pairs of node indexes (from, to);
 // meeting holds the ids where the two fronts met.
 export interface Dag {
@@ -28,7 +28,7 @@ export type ToWorker =
   | { kind: 'titles'; reqId: number; ids: number[] }
   | { kind: 'check'; reqId: number; routes: string[][] };
 
-// 'tooBig': the hard byte cap was reached (§10.2); the other reasons are §3.3's and §7's states.
+// 'tooBig': the hard byte cap was reached; the other reasons are the result page's map states.
 export type SearchErrorReason = 'network' | 'maintenance' | 'unavailable' | 'tooBig';
 
 export type FromWorker =

@@ -1,4 +1,4 @@
-// Short descriptions from the page summary API (spec §8.2). Optional everywhere: a failure gives
+// Short descriptions from the page summary API. Optional everywhere: a failure gives
 // null and the card shows the title alone.
 import { WIKI, wikiFetch } from './api.ts';
 

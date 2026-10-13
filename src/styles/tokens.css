@@ -1,4 +1,4 @@
-/* Design tokens (spec §4.2–4.3). Light by default, dark from the system or the menu's choice. */
+/* Design tokens. Light by default, dark from the system or the menu's choice. */
 :root {
   color-scheme: light;
   --bg: #ffffff;

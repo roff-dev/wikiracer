@@ -1,4 +1,4 @@
-// Title tables (spec §5.5): id → title from the tid slots, title → id from the sorted tkey blocks.
+// Title tables: id → title from the tid slots, title → id from the sorted tkey blocks.
 import { readVarint, type Cursor } from './codec.ts';
 
 const utf8 = new TextDecoder();
@@ -94,7 +94,7 @@ async function* entriesFrom(keys: string[], readBlock: ReadBlock, key: string): 
 }
 
 // Exact lookup: an exact title match wins, a single key match is accepted, otherwise null
-// (the caller then asks Wikipedia to resolve redirects and capitalisation, §5.5).
+// (the caller then asks Wikipedia to resolve redirects and capitalisation).
 export async function lookupTitle(keys: string[], readBlock: ReadBlock, input: string): Promise<TitleEntry | null> {
   const title = normaliseTitle(input);
   const key = titleKey(title);

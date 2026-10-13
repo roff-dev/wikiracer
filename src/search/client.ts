@@ -1,9 +1,9 @@
-// The page's side of the search worker (spec §5.3): starts the worker and turns its messages into
+// The page's side of the search worker: starts the worker and turns its messages into
 // callbacks per search and promises per request. Stale ids are dropped.
 import type { Dag, FromWorker, SearchErrorReason, Side, TitleHit, ToWorker } from './protocol.ts';
 
 const MB = 1024 * 1024;
-// §10.2 per-search byte caps
+// per-search byte caps
 export const BUDGET = { soft: 16 * MB, saveData: 4 * MB, hard: 64 * MB };
 
 export interface SearchHandlers {

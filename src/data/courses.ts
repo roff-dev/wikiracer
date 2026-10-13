@@ -1,4 +1,4 @@
-// The par of a known course from the course files (spec §3.8, §7 "Map unavailable"): daily, pool
+// The par of a known course from the course files: daily, pool
 // and classic courses carry d and k, so the result can still show the shortest route's length
 // when the map can't be reached.
 

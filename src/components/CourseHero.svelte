@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The course typeset large (spec §4.9): start above finish, joined in the left margin by the
+  // The course typeset large: start above finish, joined in the left margin by the
   // brand mark drawn tall, a start dot and a finish marker on one hairline.
   import { displayTitle } from '../data/share';
   import { shortDescription } from '../wiki/summary';
@@ -85,7 +85,7 @@
     text-wrap: balance;
     overflow-wrap: anywhere;
   }
-  /* long titles step down in width before they step down in size (§4.3) */
+  /* long titles step down in width before they step down in size */
   .title.long {
     font-stretch: 100%;
   }

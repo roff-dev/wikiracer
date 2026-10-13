@@ -1,4 +1,4 @@
-// The daily schedule (spec §3.8): Medium Monday to Saturday, Hard on Sunday, no article repeats
+// The daily schedule: Medium Monday to Saturday, Hard on Sunday, no article repeats
 // within 60 days, and append-only: existing days are never rewritten.
 
 export const REPEAT_DAYS = 60;

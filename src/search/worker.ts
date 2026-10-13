@@ -1,11 +1,11 @@
-// The search worker (spec §5.2, §5.3): one per page. createHost holds the protocol so tests can
+// The search worker: one per page. createHost holds the protocol so tests can
 // drive it without a Worker; the bottom of the file binds it to the worker's messages.
 import { checkRoutes, runSearch, SearchState } from './bfs.ts';
 import type { FromWorker, ToWorker } from './protocol.ts';
 import { ByteMeter, isAbort, MapError, MapReader, TooBigError, type ReaderOptions } from './reader.ts';
 import { lookupTitle, prefixSearch } from './titles.ts';
 
-export const HARD_CAP_BYTES = 64 * 1024 * 1024; // §10.2
+export const HARD_CAP_BYTES = 64 * 1024 * 1024;
 
 export interface HostOptions extends ReaderOptions {
   hardCapBytes?: number;

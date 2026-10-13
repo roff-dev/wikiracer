@@ -1,5 +1,5 @@
-// Unsigned LEB128 varints and the delta-coded list format of spec §5.4. The browser's decoder is
-// src/search/codec.ts; unit test 1 round-trips one through the other.
+// Unsigned LEB128 varints and the delta-coded list format. The browser's decoder is
+// src/search/codec.ts, and the two must stay in step.
 
 // Byte length of varint(x).
 export const vlen = (x) => (x < 128 ? 1 : x < 16384 ? 2 : x < 2097152 ? 3 : x < 268435456 ? 4 : 5);

@@ -1,4 +1,4 @@
-// Pool rules and difficulty labels (spec §3.8). Pure, so unit test 12 runs them on fixtures.
+// Pool rules and difficulty labels. Pure, so they can be tested on small fixtures.
 
 const MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December';
 const EXCLUDE = [
@@ -15,7 +15,7 @@ export function isPoolTitle(title, disambiguation = false) {
   return !disambiguation && !EXCLUDE.some((re) => re.test(title));
 }
 
-// The spec's starting thresholds (§3.8, §15 Q9). Labels order pairs by distance, then by route
+// Starting thresholds. Labels order pairs by distance, then by route
 // count (fewer routes is harder): Easy up to (easy.d, k >= easy.k), Hard from (hard.d, k < hard.k).
 export const START_THRESHOLDS = { easy: { d: 3, k: 20 }, hard: { d: 4, k: 20 } };
 

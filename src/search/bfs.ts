@@ -1,4 +1,4 @@
-// The search behind the reveal (spec §3.3, §5.4): bidirectional BFS over the map with
+// The search behind the reveal: bidirectional BFS over the map with
 // shortest-route counts, the drawn-node sample and its polar layout, DAG recovery, the featured
 // route, and the hop check of players' routes. The pipeline uses the sampling and angle functions
 // to record the home page's demo, so the demo is drawn like a live search.
@@ -38,7 +38,7 @@ export function childAngle(id: number, depth: number, parentAngle: number): numb
   return parentAngle + ((h - 0.5) * Math.PI) / 2 ** (depth - 1);
 }
 
-// Per-article search records (§5.4 "Search state in the worker"): seen maps a map id to its
+// Per-article search records: seen maps a map id to its
 // record + 1 (0 = unseen); records grow by doubling and only touched entries are reset.
 export class SearchState {
   readonly seen: Int32Array;
@@ -197,7 +197,7 @@ export async function runSearch(state: SearchState, req: SearchRequest, hooks: S
     if (!fronts[0].length || !fronts[1].length) {
       return { distance: null, pathCount: 0, explored: st.n, dag: null, featured: null, sampled };
     }
-    // §3.3 step 3: expand the frontier with fewer articles; ties go forward
+    // Expand the frontier with fewer articles; ties go forward
     const side: Side = fronts[0].length <= fronts[1].length ? 0 : 1;
     const other: Side = side === 0 ? 1 : 0;
     const depth = levels[side].length;
@@ -244,7 +244,7 @@ export async function runSearch(state: SearchState, req: SearchRequest, hooks: S
     const meet: number[] = [];
     for (const v of level) if (otherDep[st.find(v)]! >= 0) meet.push(v);
 
-    // drawn sample (§5.4 "Drawn nodes"): meeting articles always, then the hash sample, never
+    // drawn sample: meeting articles always, then the hash sample, never
     // past the remaining budget
     const met = meet.length > 0;
     const n = level.length;
@@ -278,7 +278,7 @@ export async function runSearch(state: SearchState, req: SearchRequest, hooks: S
         pathCount += st.cnt[0][r]! * st.cnt[1][r]!;
       }
       const dag = await recoverDag(st, levels, meet, hooks);
-      // DAG articles not drawn yet join the picture (§5.4)
+      // DAG articles not drawn yet join the picture
       for (const side of [0, 1] as Side[]) {
         const byDepth = new Map<number, number[]>();
         for (let i = 0; i < dag.ids.length; i++) {
@@ -311,7 +311,7 @@ function emit(st: SearchState, hooks: SearchHooks, side: Side, depth: number, id
   hooks.onNodes(side, depth, out, angles, parents);
 }
 
-// §3.3 step 5: walk back from the meeting articles level by level on each side, re-reading lists
+// Walk back from the meeting articles level by level on each side, re-reading lists
 // from the search cache and keeping edges into the current set.
 async function recoverDag(st: SearchState, levels: [Int32Array[], Int32Array[]], meet: number[], hooks: SearchHooks): Promise<Dag> {
   const Lf = levels[0].length - 1, Lb = levels[1].length - 1;
@@ -382,7 +382,7 @@ async function recoverDag(st: SearchState, levels: [Int32Array[], Int32Array[]],
   };
 }
 
-// The featured route (§3.3 Result, §5.4): from the start, step to the DAG successor through which
+// The featured route: from the start, step to the DAG successor through which
 // the most shortest routes pass; ties go to the lower map id.
 export function featuredRoute(dag: Dag, s: number, t: number): number[] {
   const succ = new Map<number, number[]>();
@@ -404,7 +404,7 @@ export function featuredRoute(dag: Dag, s: number, t: number): number[] {
   return route;
 }
 
-// The hop check (§3.10): for each route of map ids (null where a title isn't in the map), the
+// The hop check: for each route of map ids (null where a title isn't in the map), the
 // indexes i of hops route[i] → route[i + 1] that aren't links in the map.
 export async function checkRoutes(reader: MapReader, routes: (number | null)[][], ctx: ReadContext): Promise<number[][]> {
   const sources = new Set<number>();

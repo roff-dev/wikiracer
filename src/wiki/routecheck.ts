@@ -1,4 +1,4 @@
-// "Checked against today's Wikipedia" (spec §3.3, §8.2): one Action API request per route asks
+// "Checked against today's Wikipedia": one Action API request per route asks
 // which of each stop's links to the next stop still exist.
 import { actionUrl, wikiFetch } from './api.ts';
 

@@ -1,4 +1,4 @@
-// The reveal renderer (spec §5.6): one WebGL2 context, instanced drawing, animation in the vertex
+// The reveal renderer: one WebGL2 context, instanced drawing, animation in the vertex
 // shader. Layer 1 is the two fronts (nodes and parent hairlines), layer 2 the shortest-route DAG,
 // layer 3 the courses (the shortest route, and the players' routes) with the start and finish
 // markers. The frame loop runs only while something moves.
@@ -9,7 +9,7 @@ import type { LevelBatch } from './playback.ts';
 import * as S from './shaders.ts';
 import { FrameProbe, lowerTier, saveTier, TIERS, type Tier } from './tiers.ts';
 
-// §4.2 reveal colours (on --void)
+// reveal colours (on --void)
 export const REVEAL = {
   void: '#07080F',
   start: '#4FD8A4',
@@ -18,7 +18,7 @@ export const REVEAL = {
   players: ['#FFD23F', '#8F8BFF', '#FF74AC', '#4FD8A4'],
 };
 
-// Layout (§5.6): the start and finish centres sit 3.2 rings apart; one ring per click of distance.
+// Layout: the start and finish centres sit 3.2 rings apart; one ring per click of distance.
 const CENTRES: [number, number][] = [
   [-1.6, 0],
   [1.6, 0],
@@ -69,7 +69,7 @@ interface Course {
 export interface RendererOptions {
   tier: Tier;
   reducedMotion: boolean;
-  // WebGL2 is gone for this visit (a second context loss): show the static view (§10.4)
+  // WebGL2 is gone for this visit (a second context loss): show the static view
   onFallback?: () => void;
   onTierDrop?: (tier: Tier) => void;
   // after each frame, for DOM labels placed with project()
@@ -143,7 +143,6 @@ export class MapRenderer {
     return Math.max(1, this.canvas.clientWidth) / Math.max(1, this.canvas.clientHeight);
   }
 
-  // ---------- GL setup
 
   private init() {
     const gl = this.canvas.getContext('webgl2', { antialias: false, alpha: false, premultipliedAlpha: true, powerPreference: 'high-performance' });
@@ -253,7 +252,6 @@ export class MapRenderer {
     this.kick();
   };
 
-  // ---------- data
 
   // Adds one level's drawn nodes with their birth times (renderer clock). Big levels are taken in
   // over several frames (at most ADD_PER_FRAME nodes each), so adding never stalls a frame; births
@@ -326,7 +324,7 @@ export class MapRenderer {
     return i === undefined ? null : [this.front[i * FRONT_STRIDE]!, this.front[i * FRONT_STRIDE + 1]!];
   }
 
-  // The shortest-route DAG (layer 2). Its articles are all drawn (§5.4).
+  // The shortest-route DAG (layer 2). Its articles are all drawn.
   setDag(dag: Dag): void {
     const nodes: number[] = [];
     const meeting = new Set(dag.meeting);
@@ -393,7 +391,7 @@ export class MapRenderer {
     c.buffers = this.glBuffers.slice(before);
   }
 
-  // The breakthrough (§4.5, §5.6): the fronts dim to 12% over 300 ms while the DAG fades in.
+  // The breakthrough: the fronts dim to 12% over 300 ms while the DAG fades in.
   breakthrough(at = this.now()): void {
     this.dimStart = at;
     this.kick();
@@ -431,7 +429,6 @@ export class MapRenderer {
     return this.courses[index]?.positions ?? [];
   }
 
-  // ---------- frame loop
 
   private kick() {
     if (!this.raf && !this.dead && !this.gl.isContextLost()) this.raf = requestAnimationFrame(this.frame);

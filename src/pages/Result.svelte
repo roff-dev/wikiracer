@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The shared result (spec §3.7): rebuilt from its URL. The course and the race's clicks and
+  // The shared result: rebuilt from its URL. The course and the race's clicks and
   // time show at once; the routes stay behind a spoiler button, which runs the search and the
   // reveal, unless this browser has already finished the course.
   import { flushSync, onDestroy, tick } from 'svelte';

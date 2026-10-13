@@ -1,4 +1,4 @@
-// Result URLs and the words around a score (spec §3.7, §4.7). A shared result is rebuilt from its
+// Result URLs and the words around a score. A shared result is rebuilt from its
 // URL: from, to, via (the stops between them, joined with |) and t (seconds, one decimal).
 
 export interface SharedResult {
@@ -43,7 +43,7 @@ export function clock(seconds: number): string {
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-GB')} ${n === 1 ? one : many}`;
 
-// §3.7 score words
+// score words
 // (a shared result speaks about the race, not to you: 'It beat my map')
 export function scoreWords(clicks: number, shortest: number, shared = false): string {
   const over = clicks - shortest;

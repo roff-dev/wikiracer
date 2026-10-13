@@ -1,4 +1,4 @@
-// Capability tiers (spec §10.3): how many nodes the reveal draws, whether it draws parent edges,
+// Capability tiers: how many nodes the reveal draws, whether it draws parent edges,
 // and the DPR cap. The renderer starts at the remembered or detected tier and steps down for the
 // rest of the visit if frames run long; it never steps up during a visit.
 
@@ -28,7 +28,7 @@ interface NavigatorHints {
   connection?: { saveData?: boolean };
 }
 
-// The starting rule of §10.3, then the remembered tier if it's lower.
+// The starting rule for the device, then the remembered tier if it's lower.
 export function startTier(nav: NavigatorHints = navigator as NavigatorHints, finePointer = matchMedia('(pointer: fine)').matches): Tier {
   const cores = nav.hardwareConcurrency ?? 4;
   let name: TierName = 'medium';

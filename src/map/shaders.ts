@@ -1,4 +1,4 @@
-// GLSL for the reveal (spec §5.6). All animation runs here from per-instance birth times, so a
+// GLSL for the reveal. All animation runs here from per-instance birth times, so a
 // frame costs a few uniform updates. Positions are world units (one ring = 1); u_view maps world
 // to clip space and u_px is one CSS pixel in clip units, so sizes are set in CSS pixels.
 
@@ -177,7 +177,7 @@ void main() {
   vec3 c;
   float a;
   if (v_kind > 1.5) {
-    // finish: magenta dot, void gap, white ring (§4.2: marked by shape too)
+    // finish: magenta dot, void gap, white ring
     a = disc(d, 10.5);
     c = mix(mix(vec3(1.0), u_void, disc(d, 8.6)), u_finish, disc(d, 6.0));
   } else if (v_kind > 0.5) {

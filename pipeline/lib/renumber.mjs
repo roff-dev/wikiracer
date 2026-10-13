@@ -1,4 +1,4 @@
-// BFS renumbering (spec §5.4 "Node ids"): roots by in-degree (desc, ties by graph id), each
+// BFS renumbering: roots by in-degree (desc, ties by graph id), each
 // component breadth-first over out-links then in-links in CSR order. Returns rank: graph id → map id.
 export function bfsRank({ N, outOff, out, inOff, inAdj }) {
   if (N >= 2 ** 23) throw new Error('N past 2^23: widen the degree sort key');

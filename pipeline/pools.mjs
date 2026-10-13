@@ -1,4 +1,4 @@
-// Step 4 of the map pipeline (spec §3.8, §5.7): course pools, difficulty labels, the daily
+// Step 4 of the map pipeline: course pools, difficulty labels, the daily
 // schedule, classic courses and the home page's demo replay.
 //
 //   node --max-old-space-size=12000 pipeline/pools.mjs [--graph <dir>] [--launch YYYY-MM-DD] [--pairs 30000]
@@ -6,7 +6,7 @@
 // --graph defaults to the newest finished pipeline/work/graph-<run>/. --launch is needed only
 // when public/daily.json doesn't exist yet; after that the file's own launch date is kept.
 // Writes public/pools.json, public/daily.json (append-only), public/classics.json and
-// public/demo.json, and prints the label split for §15 Q9.
+// public/demo.json, and prints the label split.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,7 +47,6 @@ const rank = bfsRank(g);
 const title = (i) => g.titles.toString('utf8', g.titleOff[i], g.titleOff[i + 1]);
 log(`graph ${run}: N ${N}`);
 
-// ---------- pools (§3.8)
 const byIn = Int32Array.from({ length: N }, (_, i) => i).sort((a, b) => (inOff[b + 1] - inOff[b]) - (inOff[a + 1] - inOff[a]) || a - b);
 const pool = [];
 let dropped = 0;
@@ -75,7 +74,6 @@ const classics = CLASSICS.map(([a, b]) => {
 });
 log('classics', classics.map((c) => `${c.start} → ${c.finish}: ${c.d} (${c.k})`).join('; '));
 
-// ---------- measure candidate pairs
 const rand = rng(Number(run));
 const seen = new Set(classicKeys);
 const pairs = [];
@@ -99,7 +97,6 @@ times.sort((a, b) => a - b);
 const q = (arr, p) => arr[Math.min(arr.length - 1, Math.floor(arr.length * p))];
 log(`measured ${PAIRS} pairs: ${pairs.length} kept, ${trivial} direct links (d = 1) dropped, ${unreachable} unreachable; BFS p50/p90 ${q(times, 0.5).toFixed(1)} / ${q(times, 0.9).toFixed(1)} ms`);
 
-// ---------- difficulty split (§15 Q9)
 const hist = {};
 for (const p of pairs) hist[p.d] = (hist[p.d] ?? 0) + 1;
 console.log('distance:', Object.entries(hist).map(([d, n]) => `${d}: ${n} (${((100 * n) / pairs.length).toFixed(1)}%)`).join(', '));
@@ -124,7 +121,7 @@ const pools = {
   hard: byLabel.hard.slice(0, PER_LABEL).map(strip),
 };
 
-// ---------- daily schedule (append-only), from pairs not in pools.json
+// Daily schedule (append-only), from pairs not in pools.json
 const dailyPath = join(pub, 'daily.json');
 const before = existsSync(dailyPath) ? JSON.parse(readFileSync(dailyPath, 'utf8')) : null;
 const launch = before?.launch ?? opt('--launch');
@@ -136,7 +133,7 @@ const daily = extendDaily(before ?? { launch, days: [] }, rest, until);
 if (before) assertAppendOnly(before, daily);
 const dailyUsed = new Set(daily.days.map((x) => `${x.start}>${x.finish}`));
 // Days already published name titles from an older map; a title missing now still resolves
-// through Wikipedia's redirects (§5.5), so this only warns.
+// through Wikipedia's redirects, so this only warns.
 let stale = 0;
 if (before) {
   const want = new Set(before.days.flatMap((x) => [x.start, x.finish]));
@@ -146,7 +143,7 @@ if (before) {
 }
 log(`daily: ${before ? before.days.length : 0} existing days kept, ${daily.days.length - (before?.days.length ?? 0)} added, through ${daily.days.at(-1).date}${stale ? `; ${stale} existing days name a title that's no longer in the map (check them)` : ''}`);
 
-// ---------- demo replay (§4.9, §5.4 "Drawn nodes"): a pair in no pool, daily or classic list
+// Demo replay: a pair in no pool, daily or classic list
 const inPools = new Set(Object.values(byLabel).flatMap((l) => l.slice(0, PER_LABEL)).map((p) => `${p.start}>${p.finish}`));
 function record(s, t) {
   const res = bfs.search(s, t);
@@ -208,7 +205,6 @@ for (const p of byLabel.medium) {
 if (!demo) throw new Error('no demo pair found');
 log(`demo: ${demo.start} → ${demo.finish}, d ${demo.d}, k ${demo.k}, explored ${demo.explored}, drawn ${demo.nodes.count}, route ${demo.route.join(' > ')}`);
 
-// ---------- write
 const write = (name, obj) => {
   const text = JSON.stringify(obj) + '\n';
   writeFileSync(join(pub, name), text);
@@ -222,5 +218,5 @@ const sizes = {
 };
 for (const [n, s] of Object.entries(sizes)) console.log(`${n}: ${s.raw} B, gzip ${s.gzip} B`);
 const home = sizes['daily.json'].gzip + sizes['demo.json'].gzip;
-console.log(`home data (daily + demo, gzip): ${home} B of the 60 KB budget (§10)`);
+console.log(`home data (daily + demo, gzip): ${home} B of the 60 KB budget`);
 log('done');

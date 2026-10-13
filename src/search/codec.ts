@@ -1,4 +1,4 @@
-// Decoder for the map's varints and delta-coded lists (spec §5.4). The pipeline's encoder is
+// Decoder for the map's varints and delta-coded lists. The pipeline's encoder is
 // pipeline/lib/varint.mjs.
 
 // A read position into a byte array, advanced by every read.

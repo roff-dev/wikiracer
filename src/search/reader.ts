@@ -1,4 +1,4 @@
-// Reads the map over HTTP Range (spec §5.4 "Reading one BFS level", §10.2): map.json and the four
+// Reads the map over HTTP Range: map.json and the four
 // index files once per map version, then 2 KB slot groups and 16 KB title blocks from the data
 // sites, with a shared search cache.
 import { decodeSlotIndex, groupOf, maybeGunzip, type Group } from './layout.ts';
@@ -23,14 +23,14 @@ export interface Manifest {
   index: Record<Table, string>;
 }
 
-// A failure the page shows as one of §3.3's states
+// A failure the page shows as one of its map states
 export class MapError extends Error {
   constructor(readonly reason: Exclude<SearchErrorReason, 'tooBig'>) {
     super(`map ${reason}`);
   }
 }
 
-// The search reached its hard byte cap (§10.2)
+// The search reached its hard byte cap
 export class TooBigError extends Error {
   constructor() {
     super('map hard cap reached');
@@ -136,7 +136,7 @@ export interface ReaderOptions {
   // waits before the 2nd and 3rd attempt, plus up to `jitter` of each at random
   backoff?: [number, number];
   jitter?: number;
-  // search cache bound (§5.4 "Search cache")
+  // search cache bound
   cacheBytes?: number;
   // adjacent groups merge into one request up to this size
   maxRunBytes?: number;
@@ -326,7 +326,7 @@ export class MapReader {
     await Promise.all(waits);
   }
 
-  // One 16 KB title block (§5.5)
+  // One 16 KB title block
   readKeyBlock(block: number, ctx: ReadContext = {}): Promise<Uint8Array> {
     const key = `tkey:${block}`;
     const hit = this.cacheGet(key);
@@ -343,7 +343,7 @@ export class MapReader {
     return p;
   }
 
-  // id → title for each id (§5.5)
+  // id → title for each id
   async titles(ids: number[], ctx: ReadContext = {}): Promise<string[]> {
     const index = this.index.tid;
     const groups = new Map<number, Group>();

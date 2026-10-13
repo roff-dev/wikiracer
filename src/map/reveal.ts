@@ -1,4 +1,4 @@
-// Directs one reveal (spec §3.7, §4.5): takes the search's levels as they come (or all at once,
+// Directs one reveal: takes the search's levels as they come (or all at once,
 // re-timed, when they were buffered), then runs the breakthrough, draws the shortest route, lands
 // the par and draws the player's route. Stop titles are DOM labels over the canvas, placed each
 // frame, with the ones that would overlap a more important label hidden.
@@ -34,7 +34,7 @@ export class RevealDirector {
   private readonly live = new LiveTimer();
   private lastBirth = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
-  private labelSpecs: { text: string; kind: Label['kind']; pos: [number, number]; width: number }[] = [];
+  private pendingLabels: { text: string; kind: Label['kind']; pos: [number, number]; width: number }[] = [];
   private beat: RevealBeat = 'fronts';
   private finished = false;
 
@@ -126,13 +126,13 @@ export class RevealDirector {
       if (featured) r.drawCourse(0, r.now() + 300);
     });
     this.after(at + 300, () => {
-      this.labelSpecs = [];
+      this.pendingLabels = [];
       if (featured) this.addLabels(r.coursePositions(0), titles, 'route');
       if (playerIds && player) {
         const onRoute = new Set(featured ?? []);
         const pos = r.coursePositions(1);
         player.titles.forEach((t, i) => {
-          if (i > 0 && i < player.titles.length - 1 && !onRoute.has(playerIds[i]!)) this.labelSpecs.push(this.spec(t, 'yours', pos[i]!));
+          if (i > 0 && i < player.titles.length - 1 && !onRoute.has(playerIds[i]!)) this.pendingLabels.push(this.labelAt(t, 'yours', pos[i]!));
         });
       }
     });
@@ -186,7 +186,7 @@ export class RevealDirector {
     this.opts.onBeat(b);
   }
 
-  private spec(text: string, kind: Label['kind'], pos: [number, number]) {
+  private labelAt(text: string, kind: Label['kind'], pos: [number, number]) {
     // a width estimate is enough for overlap tests (Mona Sans width 87.5 at 13 px)
     return { text, kind, pos, width: text.length * 6.4 + 8 };
   }
@@ -194,19 +194,19 @@ export class RevealDirector {
   private addLabels(positions: [number, number][], titles: string[], kind: Label['kind']) {
     positions.forEach((p, i) => {
       const t = titles[i];
-      if (t) this.labelSpecs.push(this.spec(t, i === 0 || i === positions.length - 1 ? 'end' : kind, p));
+      if (t) this.pendingLabels.push(this.labelAt(t, i === 0 || i === positions.length - 1 ? 'end' : kind, p));
     });
   }
 
   // Greedy: start, finish and the shortest route's stops first, then the player's; a label that
   // would overlap one already placed is hidden. At most MAX_LABELS show.
   private placeLabels() {
-    if (!this.labelSpecs.length) return;
+    if (!this.pendingLabels.length) return;
     const order = { end: 0, route: 1, yours: 2 } as const;
-    const specs = [...this.labelSpecs].sort((a, b) => order[a.kind] - order[b.kind]);
+    const queued = [...this.pendingLabels].sort((a, b) => order[a.kind] - order[b.kind]);
     const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
     const w = this.canvas.clientWidth;
-    const out: Label[] = specs.map((s) => {
+    const out: Label[] = queued.map((s) => {
       const p = this.renderer.project(s.pos);
       const x0 = Math.min(Math.max(4, p.x - s.width / 2), w - 4 - s.width), y0 = p.y - 10 - LABEL_H;
       const box = { x0, x1: x0 + s.width, y0, y1: y0 + LABEL_H };

@@ -1,4 +1,4 @@
-// The daily course (spec §3.8): which day it is for the visitor, and its course number.
+// The daily course: which day it is for the visitor, and its course number.
 
 // The visitor's local calendar date as YYYY-MM-DD.
 export function localDateKey(now: Date): string {

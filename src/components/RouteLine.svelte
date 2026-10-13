@@ -1,5 +1,5 @@
 <script lang="ts">
-  // A route as a transit line (spec §3.7 "Your route vs the shortest"): the start dot, a stop per
+  // A route as a transit line: the start dot, a stop per
   // article, the finish marker. `checks` holds, per hop, whether today's Wikipedia still has the
   // link (null: not checked); `missing` marks hops my map doesn't have.
   import { displayTitle } from '../data/share';

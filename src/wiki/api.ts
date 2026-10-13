@@ -1,4 +1,4 @@
-// Wikipedia requests (spec §8.2): at most 2 in flight; a 429 waits Retry-After (capped at 10 s)
+// Wikipedia requests: at most 2 in flight; a 429 waits Retry-After (capped at 10 s)
 // and retries twice. The Api-User-Agent header goes on Action API calls only, so the edge-cached
 // REST GETs stay CORS-simple.
 export const WIKI = 'https://en.wikipedia.org';

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Every shortest route (spec §3.3): the DAG as columns by distance, every article a chip.
+  // Every shortest route: the DAG as columns by distance, every article a chip.
   // Tapping a stop in between filters to the routes through it. Titles load 24 per column at
   // first, more as a column's end scrolls into view.
   import { SvelteMap } from 'svelte/reactivity';

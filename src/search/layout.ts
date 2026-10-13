@@ -1,4 +1,4 @@
-// Slot indexes (spec §5.4 "Slot index"): which 2 KB slots hold an article's list or title.
+// Slot indexes: which 2 KB slots hold an article's list or title.
 import { readVarint } from './codec.ts';
 
 // Gzip-compressed index files start with 1F 8B. A host that adds Content-Encoding on its own

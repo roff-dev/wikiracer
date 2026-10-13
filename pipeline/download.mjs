@@ -1,4 +1,4 @@
-// Step 1 of the map pipeline (spec §5.7, §8.1): fetch the five SQL dumps for the newest
+// Step 1 of the map pipeline: fetch the five SQL dumps for the newest
 // complete monthly run from the mirror and check each against the official md5sums file.
 //
 //   node pipeline/download.mjs [--run YYYYMMDD] [--out <dir>]

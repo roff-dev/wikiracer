@@ -1,4 +1,4 @@
-// The map encoder (spec §5.4, §5.5): CSR graph → chunk files and index files, then a self-check
+// The map encoder: CSR graph → chunk files and index files, then a self-check
 // that reads everything back with the browser's own decoders (src/search/*.ts). Used by
 // pipeline/encode.mjs on the real graph and by the tests on synthetic graphs.
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,7 +29,6 @@ export async function encodeMap(g, mapDir, { chunkBytes = CHUNK, log = () => {},
   for (let i = 0; i < N; i++) inv[rank[i]] = i;
   log('bfs renumbering');
 
-  // ---------- lists (§5.4 "Lists", "Slots and groups")
   let maxDeg = 0;
   for (let i = 0; i < N; i++) maxDeg = Math.max(maxDeg, outOff[i + 1] - outOff[i], inOff[i + 1] - inOff[i]);
   const scratch = new Int32Array(maxDeg);
@@ -54,7 +53,7 @@ export async function encodeMap(g, mapDir, { chunkBytes = CHUNK, log = () => {},
     return { files, firstOfSlot, listBytes };
   }
 
-  // ---------- id → title (§5.5): varint(length) + UTF-8 bytes, in id order, same slots
+  // Id → title: varint(length) + UTF-8 bytes, in id order, same slots
   function encodeTid() {
     const writer = new ChunkWriter(mapDir, 'tid', chunkBytes);
     const packer = new SlotPacker(writer, SLOT);
@@ -69,7 +68,7 @@ export async function encodeMap(g, mapDir, { chunkBytes = CHUNK, log = () => {},
     return { firstOfSlot: packer.finish(), files: writer.finish() };
   }
 
-  // ---------- title → id (§5.5): sorted by key (ties by id), front-coded in 16 KB blocks
+  // Title → id: sorted by key (ties by id), front-coded in 16 KB blocks
   function encodeTkey() {
     const keys = new Array(N);
     for (let id = 0; id < N; id++) keys[id] = titleKey(g.titles.toString('utf8', g.titleOff[inv[id]], g.titleOff[inv[id] + 1]));
@@ -116,7 +115,6 @@ export async function encodeMap(g, mapDir, { chunkBytes = CHUNK, log = () => {},
   const tkey = encodeTkey();
   log(`tkey: ${tkey.firstKeys.length} blocks, ${tkey.files.length} files`);
 
-  // ---------- index files (§5.4 "Slot index", §5.5)
   const varintBytes = (vals) => {
     const buf = Buffer.alloc(vals.length * 5);
     let p = 0;
@@ -131,7 +129,7 @@ export async function encodeMap(g, mapDir, { chunkBytes = CHUNK, log = () => {},
   };
   for (const [k, v] of Object.entries(indexes)) writeFileSync(join(mapDir, `${k}.idx`), v);
 
-  // ---------- self-check: lists, against the CSR arrays in the original ids
+  // Self-check: lists, against the CSR arrays in the original ids
   function checkSide(name, off, adj) {
     const index = decodeSlotIndex(gunzipSync(readFileSync(join(mapDir, `${name}.idx`))));
     if (index.length !== sides[name].firstOfSlot.length) fail(`${name}.idx has ${index.length} slots`);
@@ -211,7 +209,7 @@ export async function encodeMap(g, mapDir, { chunkBytes = CHUNK, log = () => {},
     }
     if (n !== N) fail(`tkey: ${n} entries of ${N}`);
     // The real lookup on every 997th id (in key order, so runs of equal keys are included) and the
-    // titles the unit tests name.
+    // titles the caller names.
     const sample = [];
     for (let k = 0; k < N; k += 997) sample.push(tkey.order[k]);
     for (const t of lookupTitles) {
@@ -262,7 +260,7 @@ export function placeFiles(fileSizes, siteCount) {
   return { files, load };
 }
 
-// map.json (§5.4)
+// map.json
 export function manifest({ run, N, E, chunkBytes = CHUNK, sites, files, slots, tkeyBlocks, indexPath }) {
   return {
     version: run,

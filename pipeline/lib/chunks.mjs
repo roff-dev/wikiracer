@@ -1,5 +1,5 @@
 // Writes one byte stream as fixed-size chunk files <name>-00.bin, <name>-01.bin, … and reads
-// ranges back across file boundaries (spec §5.4 "Chunk files").
+// ranges back across file boundaries.
 import { closeSync, openSync, readSync, writeSync } from 'node:fs';
 import { join } from 'node:path';
 

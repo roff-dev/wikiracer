@@ -1,4 +1,4 @@
-// Packs items (lists or title entries) into fixed-size slots, spec §5.4 "Slots and groups": items
+// Packs items (lists or title entries) into fixed-size slots: items
 // go into the current group while they fit; a group is padded with zeros to the end of its slot;
 // an item longer than one slot starts a new group by itself and takes ceil(bytes / slotBytes)
 // consecutive slots. The sink receives the bytes in order: sink.write(bytes) and sink.pad(n).
