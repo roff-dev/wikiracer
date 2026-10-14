@@ -50,10 +50,12 @@ async function create(request: Request, env: Env): Promise<Response> {
   if (typeof name !== 'string' || !checkName(name).ok) return json({ error: 'name' }, 400);
   const human = await verifyTurnstile(turnstile, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'), new URL(request.url).hostname);
   if (!human) return json({ error: 'turnstile' }, 403);
+  // the creator's seat, so they're host when they join
+  const owner = await seatHash(request);
   // a taken code (one chance in 887 million per draw) is drawn again
   for (let i = 0; i < 5; i++) {
     const code = drawCode();
-    if (await env.COURSE.get(env.COURSE.idFromName(code)).init(mode, from, to)) return json({ code }, 201);
+    if (await env.COURSE.get(env.COURSE.idFromName(code)).init(mode, from, to, owner)) return json({ code }, 201);
   }
   return json({ error: 'server' }, 500);
 }

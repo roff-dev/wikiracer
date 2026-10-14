@@ -27,7 +27,13 @@ async function call<T>(path: string, init: { method?: string; body?: unknown; se
   throw new RoomApiError(known.includes(json.error as ApiError) ? (json.error as ApiError) : res.status === 404 ? 'expired' : 'server');
 }
 
-export const createCourse = (b: { mode: Mode; from: string; to: string; name: string; turnstile: string }) => call<{ code: string }>('/api/course', { body: b }).then((r) => r.code);
+// The creator's seat token goes with the request and is kept for the new code, so they're its host
+export async function createCourse(b: { mode: Mode; from: string; to: string; name: string; turnstile: string }): Promise<string> {
+  const seat = newToken();
+  const { code } = await call<{ code: string }>('/api/course', { body: b, seat });
+  keepSeat(code, seat);
+  return code;
+}
 
 export const getCourse = (code: string, seat: string) => call<CourseInfo>(`/api/course/${code}`, { seat });
 
@@ -58,11 +64,15 @@ function newToken(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-export function seatFor(code: string): string {
+function keepSeat(code: string, seat: string) {
   const all = readJson<Record<string, string>>(SEATS, {});
-  const seat = all[code] ?? memory.get(code) ?? newToken();
   memory.set(code, seat);
   if (all[code] !== seat) writeJson(SEATS, { ...all, [code]: seat });
+}
+
+export function seatFor(code: string): string {
+  const seat = readJson<Record<string, string>>(SEATS, {})[code] ?? memory.get(code) ?? newToken();
+  keepSeat(code, seat);
   return seat;
 }
 

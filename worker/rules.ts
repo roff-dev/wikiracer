@@ -45,6 +45,8 @@ export interface Room {
   startAt: number | null;
   // seat number of the host
   host: number;
+  // the creator's seat hash: their seat becomes host when they join, even if a friend got in first
+  owner?: string | null;
   seats: Seat[];
   // this round's runs, by seat number; a seat without one is watching
   runs: Record<number, Run>;
@@ -76,8 +78,8 @@ export function validFinish(course: { from: string; to: string }, f: { clicks: u
   );
 }
 
-export function createRoom(mode: Mode, from: string, to: string, now: number): Room {
-  return { mode, from, to, created: now, lastActivity: now, round: 0, stage: 'lobby', startAt: null, host: 0, seats: [], runs: {} };
+export function createRoom(mode: Mode, from: string, to: string, now: number, owner: string | null = null): Room {
+  return { mode, from, to, created: now, lastActivity: now, round: 0, stage: 'lobby', startAt: null, host: 0, owner, seats: [], runs: {} };
 }
 
 export function phaseAt(room: Room, now: number): Phase {
@@ -125,7 +127,7 @@ export function join(room: Room, hash: string, rawName: string, now: number): { 
   let n = 1;
   while (r.seats.some((s) => s.n === n)) n++;
   r.seats.push({ n, hash, name: uniqueName(name.name, r.seats.map((s) => s.name)), joined: now, connected: true, awaySince: null });
-  if (!r.seats.some((s) => s.n === r.host)) r.host = n;
+  if (hash === r.owner || !r.seats.some((s) => s.n === r.host)) r.host = n;
   return { ok: true, room: r, n };
 }
 

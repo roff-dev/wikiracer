@@ -77,9 +77,9 @@ export class Course extends DurableObject<Env> {
   }
 
   // Called once by the Worker for a new code; false when the code is already taken
-  async init(mode: Mode, from: string, to: string): Promise<boolean> {
+  async init(mode: Mode, from: string, to: string, owner: string | null): Promise<boolean> {
     if (this.room) return false;
-    this.save(createRoom(mode, from, to, Date.now()));
+    this.save(createRoom(mode, from, to, Date.now(), owner));
     return true;
   }
 
