@@ -65,7 +65,6 @@
   .rules {
     max-width: 30ch;
     margin: 28px 0 0;
-    padding-left: 34px;
     font-size: var(--size-20);
     line-height: 1.35;
     text-wrap: pretty;
@@ -81,7 +80,6 @@
     flex-wrap: wrap;
     gap: 8px 28px;
     margin: 24px 0 0;
-    padding-left: 34px;
     font-stretch: var(--stretch-data);
     font-variant-numeric: tabular-nums;
   }

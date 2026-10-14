@@ -246,17 +246,14 @@
       align-items: center;
       gap: 16px 32px;
       margin: 40px 0 56px;
-      padding-left: 34px;
     }
     .today :global(.cta .rules) {
       max-width: none;
       margin: 0;
-      padding-left: 0;
     }
     .today :global(.cta .record) {
       flex-basis: 100%;
       margin: 0;
-      padding-left: 0;
     }
     .show {
       grid-area: show;

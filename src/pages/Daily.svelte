@@ -40,7 +40,6 @@
     .go {
       display: flex;
       flex-wrap: wrap;
-      padding-left: 34px;
     }
     .go .primary {
       min-width: 200px;
