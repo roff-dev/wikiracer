@@ -68,12 +68,13 @@ a {
   cursor: pointer;
 }
 
+/* the main action: the same look as the others, a size up */
 .pill.primary {
   --btn-h: 52px;
   min-height: 52px;
-  border: 0;
-  background: var(--signal);
-  color: var(--on-signal);
+  border: 1px solid var(--line);
+  background: var(--bg-sunk);
+  color: var(--ink);
 }
 
 .pill.secondary {
@@ -83,7 +84,7 @@ a {
 }
 
 /* Hover: the Surprise me blob's own hover on every button. A pill the button's shape scales out
-   of its centre from a fifth of its size to all of it, with the blob's spring, and back on leave,
+   of its centre from nothing to all of it, with the blob's spring, and back on leave,
    under the same goo filter (#goo-fill, carried by every page), which hides it while it's small.
    Drawn as two end circles and a bar, all sized from --fill (the scale) and --btn-h (the
    button's height); the clip trims the filter's softened edge. Only where there's a real pointer,
@@ -91,7 +92,7 @@ a {
 @property --fill {
   syntax: '<number>';
   inherits: false;
-  initial-value: 0.2;
+  initial-value: 0;
 }
 
 .pill {

@@ -139,7 +139,8 @@
     inset: 0 var(--goo-r) 0 var(--goo-l);
     border-radius: 999px;
     background: var(--hover);
-    transform: scale(0.2);
+    /* nothing at rest: even a small pill can get past the filter's threshold and show as a dot */
+    transform: scale(0);
     transition: transform 0.32s cubic-bezier(0.3, 0.8, 0.35, 1.2);
   }
   .shown .body {

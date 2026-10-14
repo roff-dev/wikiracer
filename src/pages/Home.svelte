@@ -51,7 +51,7 @@
     <DailyCard>
       {#snippet actions({ day, href })}
         <div class="go">
-          <a class="pill primary" {href}>Race today's course</a>
+          <a class="pill primary main" {href}>Race today's course</a>
           <button class="pill secondary" type="button" onclick={() => ((friends = { from: day.start, to: day.finish }), (friendsOpen = true))}>Play with friends</button>
         </div>
       {/snippet}
@@ -127,6 +127,15 @@
   }
   .go .primary {
     font-size: var(--size-20);
+  }
+  /* the page's one main action stays green; green is also the hover, so it has no hover fill */
+  .go .main {
+    border: 0;
+    background: var(--signal);
+    color: var(--on-signal);
+  }
+  .go .main::before {
+    content: none;
   }
   h2 {
     margin: 0;

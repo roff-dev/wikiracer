@@ -34,10 +34,9 @@
   /* capped by height too, so landscape phones keep their actions on screen */
   --size-display: clamp(2.6rem, min(11vw, 13svh), 5.9rem);
 
-  /* hover: the ink, inverted (green marks the main action, magenta the finish, ultramarine
-     article links, so none of them can mean "pointer here"); follows the theme with --ink */
-  --hover: var(--ink);
-  --on-hover: var(--bg);
+  /* hover: the green, on every button (none of them is filled green at rest) */
+  --hover: var(--signal);
+  --on-hover: var(--on-signal);
 
   --gutter: 16px;
   /* the site header's side padding: the window's edge, not the page column's */
