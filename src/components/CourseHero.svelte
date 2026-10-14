@@ -14,14 +14,14 @@
     <svg class="mark" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /></svg>
     <span class="label">Start</span>
     <span class="title" class:long={from.length > 15}>{displayTitle(from)}</span>
-    {#await descFrom then d}{#if d}<span class="desc">{d}</span>{/if}{/await}
+    {#await descFrom}<span class="desc" aria-hidden="true"></span>{:then d}{#if d}<span class="desc">{d}</span>{/if}{/await}
   </span>
   <span class="sr"> to </span>
   <span class="stop finish">
     <svg class="mark" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" /><circle class="core" cx="10" cy="10" r="4" /></svg>
     <span class="label">Finish</span>
     <span class="title" class:long={to.length > 15}>{displayTitle(to)}</span>
-    {#await descTo then d}{#if d}<span class="desc">{d}</span>{/if}{/await}
+    {#await descTo}<span class="desc" aria-hidden="true"></span>{:then d}{#if d}<span class="desc">{d}</span>{/if}{/await}
   </span>
 </h1>
 
@@ -95,6 +95,7 @@
     }
   }
   .desc {
+    min-height: 1.4em;
     margin-top: 8px;
     color: var(--ink-2);
     font-size: var(--size-16);

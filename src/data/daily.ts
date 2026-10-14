@@ -30,3 +30,32 @@ export async function dailyNumber(date: string): Promise<number | null> {
     return null;
   }
 }
+
+export interface DailyDay {
+  date: string;
+  start: string;
+  finish: string;
+  label: 'easy' | 'medium' | 'hard';
+  d: number;
+  k: number;
+}
+
+export interface DailySchedule {
+  launch: string;
+  days: DailyDay[];
+}
+
+let schedule: Promise<DailySchedule | null> | null = null;
+
+// daily.json, read once per page; null when it can't be read
+export function loadSchedule(): Promise<DailySchedule | null> {
+  return (schedule ??= fetch('/daily.json')
+    .then((r) => (r.ok ? (r.json() as Promise<DailySchedule>) : null))
+    .catch(() => null));
+}
+
+// The course for a date, with its number; null when the schedule doesn't reach that day
+export function courseFor(s: DailySchedule, date: string): { day: DailyDay; number: number } | null {
+  const day = s.days.find((x) => x.date === date);
+  return day ? { day, number: daysBetween(s.launch, date) + 1 } : null;
+}

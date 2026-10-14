@@ -41,6 +41,7 @@
   import Trail from '../components/Trail.svelte';
   import { dailyNumber } from '../data/daily';
   import { clock, displayTitle, plural, resultUrl, shareText, splits } from '../data/share';
+  import { recordDaily } from '../data/record';
   import { markFinished } from '../data/storage';
   import { getTheme, setTheme, type Theme } from '../data/theme';
   import { startTier } from '../map/tiers';
@@ -245,6 +246,7 @@
     race = { ...race, status: 'finished' };
     save();
     markFinished(from, to);
+    if (extra.daily) recordDaily(extra.daily, { clicks: n, seconds: Math.round(elapsedMs(race) / 100) / 10 });
     // the room checks the route against the course's own titles, whatever redirects were followed
     inRoom?.onfinish(n, Math.round(elapsedMs(race)), [from, ...race.route.slice(1, -1), to]);
     end();

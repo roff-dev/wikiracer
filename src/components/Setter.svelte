@@ -10,6 +10,7 @@
   import { sameTitle } from '../race/state';
   import { mapDateText } from '../site';
   import { isDisambiguation, type Suggestion } from '../wiki/search';
+  import { shortDescription } from '../wiki/summary';
 
   // `onuse`: the course goes to the caller (a room's Change course) instead of opening a race
   let { onuse }: { onuse?: (from: string, to: string) => void } = $props();
@@ -71,6 +72,22 @@
       if (role === 'start') start = done;
       else finish = done;
     });
+  }
+
+  // Surprise me: a course from the pipeline's pools, already checked against my map, so both ends
+  // go straight in (any check still running is dropped) and only their descriptions load
+  export function fill(from: string, to: string) {
+    const n = { start: ++picks.start, finish: ++picks.finish };
+    start = { title: from, description: null, state: 'ok' };
+    finish = { title: to, description: null, state: 'ok' };
+    for (const role of ['start', 'finish'] as const) {
+      const title = role === 'start' ? from : to;
+      void shortDescription(title).then((description) => {
+        if (!description || picks[role] !== n[role]) return;
+        if (role === 'start') start = { ...start!, description };
+        else finish = { ...finish!, description };
+      });
+    }
   }
 
   function swap() {

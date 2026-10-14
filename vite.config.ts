@@ -35,10 +35,24 @@ function localMap(dir: string): Plugin {
   };
 }
 
+// Preload the Latin Mona Sans file on every page, so the display titles don't reflow when the
+// font arrives
+const preloadFont: Plugin = {
+  name: 'wikiracer-preload-font',
+  apply: 'build',
+  transformIndexHtml: {
+    order: 'post',
+    handler(_html, ctx) {
+      const font = Object.keys(ctx.bundle ?? {}).find((n) => /mona-sans-latin-wdth-normal-[^/]*\.woff2$/.test(n));
+      return font ? [{ tag: 'link', attrs: { rel: 'preload', href: `/${font}`, as: 'font', type: 'font/woff2', crossorigin: '' }, injectTo: 'head' }] : [];
+    },
+  },
+};
+
 const mapDir = process.env.WIKIRACER_MAP_DIR;
 
 export default defineConfig({
-  plugins: [svelte(), ...(mapDir ? [localMap(mapDir)] : [])],
+  plugins: [svelte(), preloadFont, ...(mapDir ? [localMap(mapDir)] : [])],
   // The search worker is a module worker
   worker: { format: 'es' },
   build: {
