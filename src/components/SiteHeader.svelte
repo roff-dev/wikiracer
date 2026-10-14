@@ -130,7 +130,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 40px;
+    min-height: 44px;
     cursor: pointer;
   }
   input {

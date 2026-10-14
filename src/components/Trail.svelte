@@ -104,6 +104,8 @@
     white-space: nowrap;
     border: 1.5px solid var(--flare);
     border-radius: 6px;
+    /* on --bg, not the strip's sunk grey, so the magenta text keeps AA */
+    background: var(--bg);
     color: var(--flare);
     font-size: var(--size-13);
     font-weight: 650;

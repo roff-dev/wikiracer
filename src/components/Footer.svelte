@@ -25,14 +25,17 @@
   nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0 20px;
+    gap: 0 8px;
+    margin-inline: -6px;
     margin-bottom: 4px;
   }
   /* 44 px tall targets without making the footer look padded */
   nav a {
     display: inline-flex;
     align-items: center;
+    min-width: 44px;
     min-height: 44px;
+    padding: 0 6px;
     color: var(--ink);
     font-weight: 600;
   }

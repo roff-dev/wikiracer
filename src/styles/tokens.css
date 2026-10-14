@@ -31,7 +31,8 @@
   --size-61: 3.8125rem;
   --size-76: 4.75rem;
   --size-95: 5.9375rem;
-  --size-display: clamp(2.6rem, 11vw, 5.9rem);
+  /* capped by height too, so landscape phones keep their actions on screen */
+  --size-display: clamp(2.6rem, min(11vw, 13svh), 5.9rem);
 
   --gutter: 16px;
   --measure: 68ch;

@@ -109,7 +109,9 @@
     text-align: right;
   }
   .name {
-    min-height: 32px;
+    min-width: 44px;
+    min-height: 44px;
+    text-align: left;
     padding: 0;
     border: 0;
     background: none;

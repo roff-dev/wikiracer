@@ -429,7 +429,7 @@
     border: 0;
     background: none;
     color: var(--ink);
-    font: 800 clamp(2.8rem, 15vw, 4.75rem) / 1 var(--font);
+    font: 800 clamp(2.8rem, min(15vw, 18svh), 4.75rem) / 1 var(--font);
     font-stretch: 125%;
     letter-spacing: 0.04em;
     cursor: pointer;
@@ -538,7 +538,7 @@
     transform: translateX(-50%);
   }
 
-  /* The board during a race: a 32 px bar under the trail on phones (tap for the full rows) */
+  /* The board during a race: a 44 px bar under the trail on phones (tap for the full rows) */
   .board-bar {
     border-top: 1px solid var(--line);
     background: var(--bg-sunk);
@@ -547,7 +547,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    min-height: 32px;
+    min-height: 44px;
     padding: 0 var(--gutter);
     overflow-x: auto;
     list-style: none;

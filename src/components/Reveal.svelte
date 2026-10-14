@@ -2,7 +2,7 @@
   // The reveal and the result under it, for a race just run and for a shared result. It plays the
   // session's levels (buffered ones re-timed, the rest live), then the breakthrough, the shortest
   // route, the par and the player's route, and settles into the result's map and text.
-  import { flushSync, onDestroy, onMount, tick, type Snippet } from 'svelte';
+  import { flushSync, onDestroy, onMount, type Snippet } from 'svelte';
   import AllRoutes from './AllRoutes.svelte';
   import RouteLine from './RouteLine.svelte';
   import { knownPar } from '../data/courses';
@@ -200,11 +200,15 @@
 
   function leaveTakeover() {
     if (!takeover) return;
-    const done = () => flushSync(() => (takeover = false));
+    // focus once the result is in the DOM: inside a view transition that's after its callback, and
+    // on phones the headline is hidden until then
+    const done = () => {
+      flushSync(() => (takeover = false));
+      headline?.focus({ preventScroll: false });
+    };
     const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
     if (doc.startViewTransition && !reducedMotion) doc.startViewTransition(done);
     else done();
-    void tick().then(() => headline?.focus({ preventScroll: false }));
   }
 
   function skip() {
@@ -575,6 +579,22 @@
     }
     .routes {
       grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* landscape phones: the map left (56%), held to the screen's height, the result right */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .reveal {
+      grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
+      gap: 24px;
+      align-items: start;
+      margin-top: 16px;
+    }
+    .stage:not(.takeover) {
+      position: sticky;
+      top: 12px;
+      height: calc(100svh - 24px);
+      aspect-ratio: auto;
     }
   }
 

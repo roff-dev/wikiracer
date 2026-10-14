@@ -34,7 +34,10 @@
     root.replaceChildren(...article.body.childNodes);
     // Images outside game links open their credit, so they take focus like buttons
     for (const img of root.querySelectorAll<HTMLImageElement>('img[data-file]')) {
-      if (img.closest('a.race')) continue;
+      // and icons (Wikidata's pencil, flags in tables) are left alone: too small to tap, and
+      // their credit isn't what anyone is after
+      const w = Number(img.getAttribute('width'));
+      if (img.closest('a.race') || (w > 0 && w < 24)) continue;
       img.tabIndex = 0;
       img.setAttribute('role', 'button');
       img.setAttribute('aria-label', `Image credit${img.alt ? `: ${img.alt}` : ''}`);
@@ -57,7 +60,7 @@
       onmove?.(link.getAttribute('data-to')!, link);
       return;
     }
-    const img = target.closest<HTMLImageElement>('img[data-file]');
+    const img = target.closest<HTMLImageElement>('img[data-file][role=button]');
     if (img) {
       e.preventDefault();
       showCredit(img);
@@ -65,7 +68,7 @@
   }
 
   function onkeydown(e: KeyboardEvent) {
-    if ((e.key === 'Enter' || e.key === ' ') && (e.target as Element).matches('img[data-file]')) act(e);
+    if ((e.key === 'Enter' || e.key === ' ') && (e.target as Element).matches('img[data-file][role=button]')) act(e);
   }
 
   // The press highlight lands on pointerdown, before the browser's own :active on touch screens
