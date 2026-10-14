@@ -66,6 +66,19 @@ const siteHead: Plugin = {
     const meta = (attrs: Record<string, string>) => ({ tag: 'meta', attrs, injectTo: 'head' as const });
     const link = (attrs: Record<string, string>) => ({ tag: 'link', attrs, injectTo: 'head' as const });
     return [
+      // The theme before any stylesheet or module runs, so a dark page doesn't flash white on
+      // load: the menu's choice from localStorage (as theme.ts keeps it), and the page colour
+      // (tokens.css's --bg, which these must match)
+      {
+        tag: 'script',
+        children: `try{var t=JSON.parse(localStorage.getItem('wikiracer.theme'));if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`,
+        injectTo: 'head' as const,
+      },
+      {
+        tag: 'style',
+        children: `:root{color-scheme:light;background:#ffffff}@media (prefers-color-scheme:dark){:root:not([data-theme='light']){color-scheme:dark;background:#0e1019}}:root[data-theme='dark']{color-scheme:dark;background:#0e1019}`,
+        injectTo: 'head' as const,
+      },
       link({ rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }),
       link({ rel: 'icon', href: '/favicon-32.png', sizes: '32x32', type: 'image/png' }),
       link({ rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }),
