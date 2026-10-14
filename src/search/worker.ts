@@ -1,6 +1,6 @@
 // The search worker: one per page. createHost holds the protocol so tests can
 // drive it without a Worker; the bottom of the file binds it to the worker's messages.
-import { checkRoutes, runSearch, SearchState } from './bfs.ts';
+import { checkRoutes, forLists, runSearch, SearchState } from './bfs.ts';
 import type { FromWorker, ToWorker } from './protocol.ts';
 import { ByteMeter, isAbort, MapError, MapReader, TooBigError, type ReaderOptions } from './reader.ts';
 import { lookupTitle, prefixSearch } from './titles.ts';
@@ -120,6 +120,12 @@ export function createHost(post: Post, opts: HostOptions) {
         return request(m.reqId, async () => {
           const routes = await Promise.all(m.routes.map((r) => Promise.all(r.map(async (t) => (await lookupTitle(reader.keys, readBlock, t))?.id ?? null))));
           return { kind: 'checkResult', reqId: m.reqId, missing: await checkRoutes(reader, routes, {}) };
+        });
+      case 'degrees':
+        return request(m.reqId, async () => {
+          const n = [0, 0];
+          await Promise.all(([0, 1] as const).map((side) => forLists(reader, side, [m.id], (_, list) => (n[side] = list.length), {})));
+          return { kind: 'degreesResult', reqId: m.reqId, out: n[0]!, in: n[1]! };
         });
     }
   }

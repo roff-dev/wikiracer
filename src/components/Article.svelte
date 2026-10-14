@@ -1,18 +1,35 @@
 <script lang="ts">
   // One race article: its title, the attribution line, and the rewritten body. Game links and
-  // image credits are handled by one delegated listener on the body.
+  // image credits are handled by one delegated listener on the body. While the next article loads,
+  // `article` is null and the title shows from `pending` (the tapped link morphs into it) over
+  // skeleton lines (or `note`, when it failed). `onpress` hears a game link pressed (its title) or the press abandoned (null).
   import '../styles/article.css';
+  import type { Snippet } from 'svelte';
   import Sheet from './Sheet.svelte';
   import { articleUrl, historyUrl, revisionUrl, type Article } from '../race/article';
   import { imageCredit, filePage, type Credit } from '../wiki/credit';
 
-  let { article, onmove }: { article: Article; onmove?: (to: string, from: Element) => void } = $props();
+  let {
+    article,
+    pending = '',
+    onmove,
+    onpress,
+    note,
+  }: {
+    article: Article | null;
+    pending?: string;
+    onmove?: (to: string, from: Element) => void;
+    onpress?: (to: string | null) => void;
+    // shown under the title: a load error, or a dead end
+    note?: Snippet;
+  } = $props();
 
   let root: HTMLDivElement;
   let creditOpen = $state(false);
   let credit = $state<{ file: string; src: string; alt: string; data: Credit | null } | null>(null);
 
   $effect(() => {
+    if (!article) return root.replaceChildren();
     if (!article.body.childNodes.length) return;
     root.replaceChildren(...article.body.childNodes);
     // Images outside game links open their credit, so they take focus like buttons
@@ -56,17 +73,24 @@
   function onpointerdown(e: PointerEvent) {
     pressed = (e.target as Element).closest('a.race');
     pressed?.classList.add('pressed');
+    if (pressed) onpress?.(pressed.getAttribute('data-to'));
+  }
+  // a touch that turned into a scroll: the prefetch started on pointerdown is dropped
+  function oncancel() {
+    if (pressed) onpress?.(null);
+    release();
   }
   function release() {
     pressed?.classList.remove('pressed');
     pressed = null;
   }
 
-  const sourceUrl = $derived(article.revision ? revisionUrl(article.title, article.revision) : articleUrl(article.title));
+  const sourceUrl = $derived(article ? (article.revision ? revisionUrl(article.title, article.revision) : articleUrl(article.title)) : '');
 </script>
 
 <article class="view">
-  <h1 class="title">{article.display}</h1>
+  <h1 class="title" class:jump={!article}>{article?.display ?? pending}</h1>
+  {#if article}
   <p class="attribution">
     <strong>{article.display}</strong>, from Wikipedia
     (<a href={sourceUrl} target="_blank" rel="noopener">article</a>,
@@ -74,6 +98,10 @@
     Changed for this game: links rewritten to stay in the race, edit links removed, navigation boxes and
     references collapsed, restyled.
   </p>
+  {:else if !note}
+    <div class="skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  {/if}
+  {@render note?.()}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div
     class="article"
@@ -82,7 +110,7 @@
     {onkeydown}
     {onpointerdown}
     onpointerup={release}
-    onpointercancel={release}
+    onpointercancel={oncancel}
     onpointerleave={release}
   ></div>
 </article>
@@ -127,6 +155,28 @@
     letter-spacing: -0.02em;
     text-wrap: balance;
     overflow-wrap: break-word;
+  }
+  /* the tapped link morphs into this title (same view-transition name) */
+  .title.jump {
+    view-transition-name: jump;
+  }
+  .skeleton {
+    display: grid;
+    gap: 14px;
+    margin: 14px 0 28px;
+  }
+  .skeleton span {
+    height: 1.05em;
+    border-radius: 6px;
+    background: var(--bg-sunk);
+  }
+  .skeleton span:first-child {
+    width: 60%;
+    height: 0.8em;
+    margin-bottom: 18px;
+  }
+  .skeleton span:last-child {
+    width: 72%;
   }
   .attribution {
     margin: 14px 0 28px;

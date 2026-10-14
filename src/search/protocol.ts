@@ -26,7 +26,8 @@ export type ToWorker =
   | { kind: 'lookup'; reqId: number; titles: string[] }
   | { kind: 'prefix'; reqId: number; q: string }
   | { kind: 'titles'; reqId: number; ids: number[] }
-  | { kind: 'check'; reqId: number; routes: string[][] };
+  | { kind: 'check'; reqId: number; routes: string[][] }
+  | { kind: 'degrees'; reqId: number; id: number };
 
 // 'tooBig': the hard byte cap was reached; the other reasons are the result page's map states.
 export type SearchErrorReason = 'network' | 'maintenance' | 'unavailable' | 'tooBig';
@@ -53,4 +54,6 @@ export type FromWorker =
   | { kind: 'titlesResult'; reqId: number; titles: string[] }
   // per route, the indexes of hops (route[i] → route[i + 1]) that aren't in the map
   | { kind: 'checkResult'; reqId: number; missing: number[][] }
+  // how many links leave the article and how many reach it
+  | { kind: 'degreesResult'; reqId: number; out: number; in: number }
   | { kind: 'requestError'; reqId: number; reason: Exclude<SearchErrorReason, 'tooBig'> };
