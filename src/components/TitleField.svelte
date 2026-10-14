@@ -115,7 +115,7 @@
       <span class="sr">{label}: </span>
       <span class="title">{displayTitle(picked.title)}</span>
       {#if picked.description}<span class="desc">{picked.description}</span>{/if}
-      <button class="clear" type="button" aria-label="Clear {label.toLowerCase()}" onclick={clear}>
+      <button class="clear hover-fill" type="button" aria-label="Clear {label.toLowerCase()}" onclick={clear}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
       </button>
     </div>

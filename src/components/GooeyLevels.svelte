@@ -1,10 +1,10 @@
 <script lang="ts" generics="T extends string">
-  // A row of choices with a gooey highlight: a green blob follows the pointer (or focus) from button
+  // A row of choices with a gooey highlight: an ink blob (the site's hover colour) follows the pointer (or focus) from button
   // to button. Moving, its leading edge races ahead and its trailing edge follows later, so the
   // body stretches towards the new button and snaps back; two droplets lag behind it and are
   // drawn back in. An SVG goo filter (blur, then a hard alpha threshold) melts it all into one
   // liquid shape. Layers, bottom to top: the resting pills, the goo, the labels, and the labels
-  // again in the on-green colour, cut to the body, so text over the green always reads light.
+  // again in the on-hover colour, cut to the body, so text over the blob always reads.
   let { options, labelledby, onpick }: { options: [T, string][]; labelledby: string; onpick: (value: T) => void } = $props();
 
   const filterId = `goo-${Math.random().toString(36).slice(2, 8)}`;
@@ -53,7 +53,7 @@
     {#each options as [value, name] (value)}<span class="pill" data-label={name}></span>{/each}
   </div>
   <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
-    <filter id={filterId} x="-20%" y="-60%" width="140%" height="220%">
+    <filter id={filterId} x="-20%" y="-60%" width="140%" height="220%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
       <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" />
     </filter>
@@ -130,7 +130,7 @@
     position: absolute;
     inset: 0 var(--goo-r) 0 var(--goo-l);
     border-radius: 999px;
-    background: var(--signal);
+    background: var(--hover);
     transform: scale(0.2);
     transition: transform 0.32s cubic-bezier(0.3, 0.8, 0.35, 1.2);
   }
@@ -146,7 +146,7 @@
     height: 24px;
     margin: -12px 0 0 -12px;
     border-radius: 50%;
-    background: var(--signal);
+    background: var(--hover);
     translate: var(--goo-c) 0;
     scale: 0;
     transition: scale 0.3s;
@@ -178,14 +178,18 @@
     opacity: 0;
     transition: opacity 0.2s;
   }
-  /* drawn as generated text: it only ever shows over the green (the clip), and the buttons
+  /* drawn as generated text: it only ever shows over the blob (the clip), and the buttons
      underneath are the real, accessible labels */
   .inverse .pill {
-    color: var(--on-signal);
+    color: var(--on-hover);
     cursor: default;
   }
-  .inverse .pill::before {
+  .inverse .pill::after {
     content: attr(data-label);
+  }
+  /* the blob is this row's hover, so the buttons' own fill (base.css) stays off */
+  .labels .pill::before {
+    content: none;
   }
   .shown .inverse {
     opacity: 1;

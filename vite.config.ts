@@ -80,6 +80,14 @@ const siteHead: Plugin = {
       meta({ property: 'og:image:alt', content: 'Wikiracer: get from one Wikipedia article to another by tapping links.' }),
       meta({ name: 'twitter:card', content: 'summary_large_image' }),
       ...(NOINDEX.includes(path) ? [meta({ name: 'robots', content: 'noindex' })] : []),
+      // the goo filter the buttons' hover fill uses (base.css): blur, then a hard alpha threshold
+      {
+        tag: 'svg',
+        attrs: { width: '0', height: '0', style: 'position: absolute', 'aria-hidden': 'true', focusable: 'false' },
+        children:
+          '<filter id="goo-fill" x="-10%" y="-40%" width="120%" height="180%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="5" /><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" /></filter>',
+        injectTo: 'body-prepend' as const,
+      },
       ...(ANALYTICS_TOKEN && !ctx.server
         ? [{ tag: 'script', attrs: { defer: true, src: 'https://static.cloudflareinsights.com/beacon.min.js', 'data-cf-beacon': JSON.stringify({ token: ANALYTICS_TOKEN }) }, injectTo: 'body' as const }]
         : []),

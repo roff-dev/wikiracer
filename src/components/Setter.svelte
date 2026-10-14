@@ -112,7 +112,7 @@
   <div class="ends">
     <TitleField role="start" bind:picked={start} onpick={(s) => pick('start', s)} {fallback} />
     <TitleField role="finish" bind:picked={finish} onpick={(s) => pick('finish', s)} {fallback} />
-    <button class="swap" type="button" aria-label="Swap start and finish" onclick={swap} disabled={!start && !finish}>
+    <button class="swap hover-fill" type="button" aria-label="Swap start and finish" onclick={swap} disabled={!start && !finish}>
       <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3v14M7 3L4 6M7 3l3 3M13 17V3M13 17l-3-3M13 17l3-3" /></svg>
     </button>
   </div>

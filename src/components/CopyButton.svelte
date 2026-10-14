@@ -22,7 +22,7 @@
   }
 </script>
 
-<button class="copy" class:done class:bare type="button" onclick={copy} aria-label={label} title={label}>
+<button class="copy" class:done class:bare class:hover-fill={!bare} type="button" onclick={copy} aria-label={label} title={label}>
   <svg viewBox="0 0 20 20" aria-hidden="true">
     {#if done}<path d="M4.5 10.5l3.5 3.5 7.5-8" />{:else}<rect x="7" y="7" width="10" height="10" rx="2" /><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-7A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13H7" />{/if}
   </svg>
@@ -31,6 +31,7 @@
 
 <style>
   .copy {
+    position: relative;
     display: grid;
     flex: none;
     place-items: center;
@@ -42,9 +43,6 @@
     background: var(--bg);
     color: var(--ink);
     cursor: pointer;
-  }
-  .copy:hover {
-    background: var(--bg-sunk);
   }
   .copy:active {
     transform: translateY(1px);

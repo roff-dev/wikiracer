@@ -14,7 +14,7 @@
   <Wordmark />
   {#if !plain}
   <a class="about" href="/about/">About</a>
-  <button class="menu-btn" type="button" popovertarget="site-menu" aria-label="Menu">
+  <button class="menu-btn hover-fill" type="button" popovertarget="site-menu" aria-label="Menu">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>
   </button>
   <div id="site-menu" class="menu" popover="auto">
@@ -55,6 +55,7 @@
     text-decoration: underline;
   }
   .menu-btn {
+    position: relative;
     display: grid;
     place-items: center;
     width: 44px;
@@ -65,9 +66,6 @@
     background: none;
     color: var(--ink);
     cursor: pointer;
-  }
-  .menu-btn:hover {
-    background: var(--bg-sunk);
   }
   .menu-btn svg {
     width: 20px;

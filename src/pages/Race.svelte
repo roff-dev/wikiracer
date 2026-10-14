@@ -451,7 +451,7 @@
     <header class="hud">
       <Wordmark />
       {@render hudStats()}
-      <button class="menu-btn" type="button" popovertarget="race-menu" aria-label="Menu">
+      <button class="menu-btn hover-fill" type="button" popovertarget="race-menu" aria-label="Menu">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>
       </button>
     </header>
@@ -796,6 +796,7 @@
     text-align: right;
   }
   .menu-btn {
+    position: relative;
     display: grid;
     place-items: center;
     flex: none;
@@ -807,9 +808,6 @@
     background: none;
     color: var(--ink);
     cursor: pointer;
-  }
-  .menu-btn:hover {
-    background: var(--bg-sunk);
   }
   .menu-btn svg {
     width: 20px;

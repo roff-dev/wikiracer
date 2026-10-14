@@ -22,7 +22,7 @@
   <div class="inner">
     <header>
       <h2>{title}</h2>
-      <button class="close" type="button" aria-label="Close" onclick={() => dialog.close()}>
+      <button class="close hover-fill" type="button" aria-label="Close" onclick={() => dialog.close()}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
       </button>
     </header>
@@ -65,6 +65,7 @@
     font-stretch: var(--stretch-heading);
   }
   .close {
+    position: relative;
     display: grid;
     place-items: center;
     width: 44px;
@@ -76,10 +77,6 @@
     background: none;
     color: var(--ink-2);
     cursor: pointer;
-  }
-  .close:hover {
-    background: var(--bg-sunk);
-    color: var(--ink);
   }
   .close svg {
     width: 20px;
