@@ -18,3 +18,15 @@ export function daysBetween(a: string, b: string): number {
 export function courseNumber(launch: string, now: Date): number {
   return daysBetween(launch, localDateKey(now)) + 1;
 }
+
+// The daily course's number for a date (YYYY-MM-DD), from daily.json's launch date; null when
+// the file can't be read.
+export async function dailyNumber(date: string): Promise<number | null> {
+  try {
+    const { launch } = (await (await fetch('/daily.json')).json()) as { launch: string };
+    const n = daysBetween(launch, date) + 1;
+    return n >= 1 ? n : null;
+  } catch {
+    return null;
+  }
+}

@@ -1,5 +1,6 @@
-// Result URLs and the words around a score. A shared result is rebuilt from its
-// URL: from, to, via (the stops between them, joined with |) and t (seconds, one decimal).
+// Result URLs, share text, splits and the words around a score. A shared result is rebuilt from
+// its URL: from, to, r (the stops between them, joined with | and base64url-encoded, so a glance
+// at the link doesn't give the route away) and t (seconds, one decimal).
 
 export interface SharedResult {
   from: string;
@@ -16,8 +17,27 @@ export function normaliseTitle(t: string): string {
 
 export const displayTitle = (t: string) => t.replace(/_/g, ' ');
 
+const utf8 = new TextEncoder();
+
+export function encodeRoute(via: string[]): string {
+  let bin = '';
+  for (const b of utf8.encode(via.join('|'))) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// null when it isn't a route this site encoded
+export function decodeRoute(r: string): string[] | null {
+  try {
+    const bin = atob(r.replace(/-/g, '+').replace(/_/g, '/'));
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+    return text.split('|').filter((t) => t.trim());
+  } catch {
+    return null;
+  }
+}
+
 export function resultUrl(r: SharedResult, base: string): string {
-  const q = new URLSearchParams({ from: r.from, to: r.to, via: r.via.join('|'), t: r.seconds.toFixed(1) });
+  const q = new URLSearchParams({ from: r.from, to: r.to, r: encodeRoute(r.via), t: r.seconds.toFixed(1) });
   return `${base.replace(/\/$/, '')}/race/result/?${q}`;
 }
 
@@ -28,8 +48,10 @@ export function parseResult(search: string): SharedResult | null {
   if (!from?.trim() || !to?.trim() || t === null) return null;
   const seconds = Number(t);
   if (!Number.isFinite(seconds) || seconds < 0) return null;
-  const via = (q.get('via') ?? '').split('|').filter((s) => s.trim()).map(normaliseTitle);
-  if (via.length > 200) return null;
+  const raw = q.get('r');
+  const stops = raw ? decodeRoute(raw) : [];
+  if (!stops || stops.length > 200) return null;
+  const via = stops.map(normaliseTitle);
   return { from: normaliseTitle(from), to: normaliseTitle(to), via, seconds };
 }
 
@@ -51,4 +73,27 @@ export function scoreWords(clicks: number, shortest: number, shared = false): st
   if (over === 0) return 'Perfect route';
   if (over === 1) return 'One off the shortest';
   return `${over} more than the shortest`;
+}
+
+// The share card: no par and no route, so it can't spoil the course for the people it's sent to.
+// The first line carries the daily course's number when the race was the daily.
+export function shareText(r: SharedResult, opts: { url: string; daily?: number }): string {
+  const n = clicksOf(r);
+  return [
+    opts.daily ? `Wikiracer #${opts.daily}` : 'Wikiracer',
+    `${displayTitle(r.from)} to ${displayTitle(r.to)}`,
+    `${n.toLocaleString('en-GB')} ${n === 1 ? 'click' : 'clicks'} in ${clock(r.seconds)}`,
+    opts.url,
+  ].join('\n');
+}
+
+export interface Split {
+  from: string;
+  to: string;
+  ms: number;
+}
+
+// One row per leg: the time spent on an article before leaving it for the next
+export function splits(route: string[], legs: number[]): Split[] {
+  return route.slice(1).map((to, i) => ({ from: route[i]!, to, ms: legs[i] ?? 0 }));
 }

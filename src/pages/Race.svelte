@@ -8,9 +8,11 @@
   import Footer from '../components/Footer.svelte';
   import Reveal from '../components/Reveal.svelte';
   import RouteLine from '../components/RouteLine.svelte';
+  import ShareButton from '../components/ShareButton.svelte';
   import Sheet from '../components/Sheet.svelte';
   import Trail from '../components/Trail.svelte';
-  import { clock, displayTitle, plural } from '../data/share';
+  import { dailyNumber } from '../data/daily';
+  import { clock, displayTitle, plural, resultUrl, shareText, splits } from '../data/share';
   import { markFinished } from '../data/storage';
   import { getTheme, setTheme, type Theme } from '../data/theme';
   import { startTier } from '../map/tiers';
@@ -59,6 +61,11 @@
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   const n = $derived(clicks(race));
+  let daily = $state<number | null>(null);
+  if (extra.daily) void dailyNumber(extra.daily).then((d) => (daily = d));
+  const seconds = $derived(Math.round(elapsedMs(race) / 100) / 10);
+  const shared = $derived({ from, to, via: race.route.slice(1, -1), seconds });
+  const card = $derived(shareText(shared, { url: resultUrl(shared, location.origin), ...(daily ? { daily } : {}) }));
   const deadEnd = $derived(!!article && article.links.size === 0);
 
   function startSearch() {
@@ -384,11 +391,11 @@
       {to}
       route={race.route}
       clicks={n}
-      seconds={elapsedMs(race) / 1000}
+      {seconds}
       voice="race"
       finished={race.status === 'finished'}
       bind:takeover
-      extra={fromHere ? fromHereNote : undefined}
+      extra={resultExtra}
     />
     <div class="after">
       <a class="pill secondary" href="/">Pick another course</a>
@@ -417,6 +424,24 @@
     <p>Nothing on this page links to another article. Give up to see the shortest route.</p>
     <button class="pill primary" type="button" onclick={() => (confirmOpen = true)}>Give up</button>
   </div>
+{/snippet}
+
+{#snippet resultExtra()}
+  {@render fromHereNote()}
+  {#if race.route.length > 1}
+    <table class="splits">
+      <caption>Splits</caption>
+      <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col" class="t">Time</th></tr></thead>
+      <tbody>
+        {#each splits(race.route, race.legs) as leg, i (i)}
+          <tr><td>{displayTitle(leg.from)}</td><td>{displayTitle(leg.to)}</td><td class="t">{clock(leg.ms / 1000)}</td></tr>
+        {/each}
+      </tbody>
+    </table>
+  {/if}
+  {#if race.status === 'finished'}
+    <div class="share-row"><ShareButton text={card} /></div>
+  {/if}
 {/snippet}
 
 {#snippet fromHereNote()}
@@ -824,6 +849,38 @@
   }
   .after {
     margin-top: 32px;
+  }
+  .splits {
+    width: 100%;
+    margin-top: 28px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .splits caption {
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .splits th {
+    padding: 0 8px 6px 0;
+    color: var(--ink-2);
+    font-size: var(--size-13);
+    font-weight: 550;
+    text-align: left;
+  }
+  .splits td {
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid var(--line);
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+  .splits .t {
+    width: 4.5em;
+    padding-right: 0;
+    text-align: right;
+  }
+  .share-row {
+    margin-top: 24px;
   }
   .sheet-text {
     margin: 0 0 20px;
