@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://wikiracer.kieronoates.workers.dev/sitemap.xml

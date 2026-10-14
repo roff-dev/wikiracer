@@ -3,7 +3,7 @@ import '../styles/tokens.css';
 import '../styles/base.css';
 import { mount } from 'svelte';
 import { applyTheme } from '../data/theme';
-import TextPage from '../pages/TextPage.svelte';
+import Privacy from '../pages/Privacy.svelte';
 
 applyTheme();
-mount(TextPage, { target: document.getElementById('app')!, props: { title: 'Privacy' } });
+mount(Privacy, { target: document.getElementById('app')! });

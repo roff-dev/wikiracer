@@ -3,7 +3,7 @@ import '../styles/tokens.css';
 import '../styles/base.css';
 import { mount } from 'svelte';
 import { applyTheme } from '../data/theme';
-import TextPage from '../pages/TextPage.svelte';
+import Terms from '../pages/Terms.svelte';
 
 applyTheme();
-mount(TextPage, { target: document.getElementById('app')!, props: { title: 'Terms' } });
+mount(Terms, { target: document.getElementById('app')! });

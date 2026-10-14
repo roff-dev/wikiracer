@@ -36,8 +36,8 @@
       tier = tiers.startTier();
       demo = d;
       play();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // the demo is decoration: without it, its caption says what it would show
       failed = true;
     }
   }
