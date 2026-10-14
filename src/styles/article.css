@@ -1,0 +1,446 @@
+/* Wikipedia's article HTML in race mode. Injected markup, so these are global rules scoped to
+   .article. Wikipedia's own stylesheets are never loaded: the page takes the site's look. */
+.article {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  font-weight: 420;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 900px) {
+  .article {
+    font-size: 1.125rem;
+    line-height: 1.65;
+  }
+}
+
+.article :is(h2, h3, h4, h5, h6) {
+  font-weight: 680;
+  font-stretch: var(--stretch-heading);
+  line-height: 1.2;
+  text-wrap: balance;
+  clear: both;
+}
+
+.article h2 {
+  margin: 2.2em 0 0.6em;
+  font-size: var(--size-25);
+}
+
+.article h3 {
+  margin: 1.8em 0 0.5em;
+  font-size: var(--size-20);
+}
+
+.article :is(h4, h5, h6) {
+  margin: 1.5em 0 0.4em;
+  font-size: 1em;
+}
+
+.article p {
+  margin: 0 0 1em;
+}
+
+.article :is(ul, ol) {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+
+.article dl {
+  margin: 0 0 1em;
+}
+
+.article dd {
+  margin-left: 1.4em;
+}
+
+.article blockquote {
+  margin: 0 0 1em;
+  padding-left: 1em;
+  border-left: 3px solid var(--line);
+  color: var(--ink-2);
+}
+
+/* The game link */
+.article a.race {
+  position: relative;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--link) 40%, transparent);
+  border-radius: 3px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.article a.race::after {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+}
+
+.article a.race:hover,
+.article a.race:focus-visible {
+  text-decoration-color: var(--link);
+}
+
+.article a.race:active,
+.article a.race.pressed {
+  text-decoration-color: var(--link);
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+}
+
+.article area {
+  cursor: pointer;
+}
+
+/* Images keep their own size; tapping one opens its credit */
+.article img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
+.article img[data-file] {
+  cursor: zoom-in;
+}
+
+.article figure {
+  margin: 0 0 1.2em;
+  max-width: 100%;
+}
+
+.article figure > :is(a, span) {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.article figcaption {
+  margin-top: 0.4em;
+  color: var(--ink-2);
+  font-size: var(--size-13);
+  line-height: 1.45;
+}
+
+@media (min-width: 900px) {
+  .article figure.mw-halign-right,
+  .article figure[typeof~='mw:File/Thumb']:not(.mw-halign-left, .mw-halign-center, .mw-halign-none) {
+    float: right;
+    clear: right;
+    max-width: 45%;
+    margin: 0.3em 0 1.2em 1.5em;
+  }
+
+  .article figure.mw-halign-left {
+    float: left;
+    clear: left;
+    max-width: 45%;
+    margin: 0.3em 1.5em 1.2em 0;
+  }
+}
+
+.article .gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.article .gallery li {
+  max-width: 100%;
+}
+
+.article .gallerytext {
+  color: var(--ink-2);
+  font-size: var(--size-13);
+}
+
+/* Panels: infobox, sidebars, message boxes */
+.article :is(.infobox, .sidebar, .vertical-navbox) {
+  width: 100%;
+  margin: 0 0 1.5em;
+  padding: 12px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg-sunk);
+  border-radius: 12px;
+  font-size: var(--size-13);
+  line-height: 1.45;
+}
+
+@media (min-width: 900px) {
+  .article :is(.infobox, .sidebar, .vertical-navbox) {
+    float: right;
+    clear: right;
+    width: 22em;
+    max-width: 45%;
+    margin: 0.3em 0 1.5em 1.5em;
+  }
+}
+
+/* Wikipedia sizes some boxes inline (multi-image frames, quote boxes); none may pass the column */
+.article :is(div, figure, table)[style*='width'] {
+  max-width: 100% !important;
+}
+
+/* An infobox whose content can't shrink to a phone scrolls inside its own panel */
+@media (max-width: 899px) {
+  .article .infobox {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* Phones have no room beside a float: Wikipedia's floated boxes stack in the column instead */
+  .article :is([style*='float'], .floatright, .floatleft, .tright, .tleft, .infobox, .sidebar, .vertical-navbox) {
+    float: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Panels take the site's colours, not each template's own header tints */
+.article :is(.infobox, .sidebar, .vertical-navbox, .navbox) :is([style*='background'], [style*='color']) {
+  background: none !important;
+  color: inherit !important;
+}
+
+.article .infobox :is(th, td) {
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.article .infobox :is(.infobox-above, .infobox-title, caption) {
+  font-size: var(--size-20);
+  font-weight: 680;
+  font-stretch: var(--stretch-heading);
+  text-align: left;
+}
+
+.article .infobox :is(.infobox-image, .infobox-caption) {
+  text-align: center;
+}
+
+.article .infobox .infobox-caption {
+  color: var(--ink-2);
+}
+
+.article .infobox .infobox-header {
+  padding-top: 12px;
+  font-weight: 680;
+}
+
+.article :is(.ambox, .mw-message-box, .tmbox, .ombox) {
+  margin: 0 0 1em;
+  padding: 8px 12px;
+  background: var(--bg-sunk);
+  border-radius: 12px;
+  color: var(--ink-2);
+  font-size: var(--size-13);
+}
+
+.article :is(.ambox, .mw-message-box) :is(.mbox-image, .mbox-imageright) {
+  display: none;
+}
+
+.article :is(.hatnote, .dablink, .rellink) {
+  margin: 0 0 1em;
+  color: var(--ink-2);
+  font-size: 0.9375em;
+}
+
+/* Tables scroll sideways in their own box, never the page */
+.article .table-scroll {
+  max-width: 100%;
+  margin: 0 0 1.5em;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.article .table-scroll table {
+  border-collapse: collapse;
+  font-size: var(--size-13);
+  line-height: 1.4;
+}
+
+.article .table-scroll :is(th, td) {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.article .table-scroll th {
+  font-weight: 680;
+}
+
+.article .table-scroll caption {
+  padding-bottom: 6px;
+  text-align: left;
+  font-weight: 680;
+}
+
+/* Citation markers */
+.article sup.mw-ref,
+.article sup.reference {
+  font-size: 0.7em;
+  font-weight: 450;
+  color: var(--ink-2);
+}
+
+/* Things that only make sense on Wikipedia itself */
+.article :is(.navbar, .mw-cite-backlink, .noprint.portal, .sistersitebox, .mw-collapsible-toggle) {
+  display: none;
+}
+
+/* References and navigation boxes: one row each, closed until tapped */
+.article details.references,
+.article details.navboxes {
+  clear: both;
+  margin: 2em 0 0;
+  background: var(--bg-sunk);
+  border-radius: 12px;
+}
+
+.article details.references + details.references {
+  margin-top: 12px;
+}
+
+.article details > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
+  font-weight: 680;
+  font-stretch: var(--stretch-heading);
+  font-size: var(--size-16);
+  cursor: pointer;
+  list-style: none;
+  border-radius: 12px;
+}
+
+.article details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.article details > summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-right: 1.75px solid currentColor;
+  border-bottom: 1.75px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.article details[open] > summary::after {
+  transform: translateY(2px) rotate(225deg);
+}
+
+.article details.references > .mw-references-wrap {
+  padding: 0 16px 16px;
+  font-size: var(--size-13);
+  line-height: 1.45;
+}
+
+.article details.references ol {
+  margin: 0;
+  padding-left: 2em;
+}
+
+.article details.references li + li {
+  margin-top: 0.4em;
+}
+
+.article details.navboxes > .navbox {
+  margin: 0 16px 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--size-13);
+  line-height: 1.5;
+}
+
+/* Wikipedia's navbox grid, stacked: title, then each group's label over its list */
+.article .navbox :is(table, tbody, tr, th, td) {
+  display: block;
+  width: auto !important;
+  text-align: left !important;
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+.article .navbox .navbox-title {
+  margin-bottom: 8px;
+  font-size: var(--size-16);
+  font-weight: 680;
+  font-stretch: var(--stretch-heading);
+}
+
+.article .navbox .navbox-title > div {
+  margin: 0 !important;
+  font-size: inherit !important;
+}
+
+.article .navbox .navbox-group {
+  margin-top: 10px;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.article .navbox .navbox-abovebelow {
+  margin-top: 10px;
+}
+
+.article .navbox :is(.navbox-image, .navbox-spacer) {
+  display: none;
+}
+
+.article .hlist :is(ul, ol, dl) {
+  margin: 0;
+  padding: 0;
+}
+
+.article .hlist :is(li, dd, dt) {
+  display: inline;
+}
+
+.article .hlist :is(li, dd):not(:last-child)::after {
+  content: ' · ';
+  color: var(--ink-2);
+  font-weight: 450;
+}
+
+.article .hlist :is(li, dd) :is(ul, ol)::before {
+  content: '(';
+}
+
+.article .hlist :is(li, dd) :is(ul, ol)::after {
+  content: ')';
+}
+
+
+/* Columns of reference or list items */
+.article :is(.div-col, .refbegin) {
+  font-size: var(--size-13);
+}
+
+.article .mwe-math-fallback-image-inline,
+.article .mwe-math-fallback-image-display {
+  filter: var(--math-filter, none);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .article {
+    --math-filter: invert(0.9);
+  }
+}
+
+:root[data-theme='dark'] .article {
+  --math-filter: invert(0.9);
+}

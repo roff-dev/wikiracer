@@ -10,6 +10,7 @@
   --link: #3a2ef0;
   --line: #dee1e9;
   --on-signal: #ffffff;
+  --shadow-sheet: 0 -8px 32px rgb(22 25 37 / 0.14);
   /* The reveal canvas is dark in both themes */
   --void: #07080f;
 
@@ -48,6 +49,7 @@
     --link: #8f8bff;
     --line: #2a2e3d;
     --on-signal: #0e1019;
+    --shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
   }
 }
 
@@ -62,6 +64,7 @@
   --link: #8f8bff;
   --line: #2a2e3d;
   --on-signal: #0e1019;
+  --shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
 }
 
 /* Wide-gamut screens: same lightness (so contrast holds), a little more chroma */
