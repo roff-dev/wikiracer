@@ -16,6 +16,8 @@
   let centre = $state(0);
   let toRight = $state(true);
   let shown = $state(false);
+  // set for the one frame a hidden blob is moved, so it doesn't slide over from where it last was
+  let jump = $state(false);
 
   function place(b: HTMLElement) {
     toRight = b.offsetLeft >= left;
@@ -27,15 +29,18 @@
   function move(i: number) {
     const b = labels?.children[i] as HTMLElement | undefined;
     if (!b || !group) return;
-    place(b);
-    // it appears on the first button it reaches rather than sliding in from the side
-    if (!shown) requestAnimationFrame(() => (shown = true));
+    // hidden (first time, or after leaving the row): jump to this button, then grow there
+    if (!shown) {
+      jump = true;
+      place(b);
+      requestAnimationFrame(() => requestAnimationFrame(() => ((jump = false), (shown = true))));
+    } else place(b);
   }
 
   const leave = () => (shown = false);
 </script>
 
-<div class="goo-group" class:shown class:right={toRight} role="group" aria-labelledby={labelledby} bind:this={group} onpointerleave={leave} style:--goo-l="{left}px" style:--goo-r="{right}px" style:--goo-c="{centre}px" style:--goo-c2="{centre}px">
+<div class="goo-group" class:shown class:jump class:right={toRight} role="group" aria-labelledby={labelledby} bind:this={group} onpointerleave={leave} style:--goo-l="{left}px" style:--goo-r="{right}px" style:--goo-c="{centre}px" style:--goo-c2="{centre}px">
   <div class="rest" aria-hidden="true">
     {#each options as [value] (value)}<span></span>{/each}
   </div>
@@ -103,6 +108,9 @@
       --goo-r var(--lead),
       --goo-c 0.56s cubic-bezier(0.6, 0, 0.2, 1),
       --goo-c2 0.7s cubic-bezier(0.6, 0, 0.2, 1);
+  }
+  .goo-group.jump {
+    transition: none;
   }
   .rest,
   .goo,

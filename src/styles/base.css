@@ -81,14 +81,20 @@ a {
   color: var(--ink);
 }
 
-/* Hover: a gooey ink fill flows in from the left, a droplet running ahead of its front, and
-   drains back on leave. One layer under the label, drawn with gradients and melted by the goo
-   filter every page carries (#goo-fill); the clip trims the filter's softened edge. Only where
-   there's a real pointer, so a tap on a phone doesn't leave it filled. */
-@property --fill {
+/* Hover: a gooey fill grows out of the button's middle to its edges, the way the Surprise me
+   blob appears, and melts back into the middle on leave. One layer under the label: a rectangle
+   that grows from nothing, rounded into a blob by the goo filter every page carries (#goo-fill)
+   while it's small; the clip trims the filter's softened edge. Only where there's a real
+   pointer, so a tap on a phone doesn't leave it filled. */
+@property --fill-w {
   syntax: '<percentage>';
   inherits: false;
-  initial-value: -20%;
+  initial-value: 0%;
+}
+@property --fill-h {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
 }
 
 .pill {
@@ -104,8 +110,8 @@ a {
 @media (hover: hover) {
   .pill,
   .hover-fill {
-    /* the label turns as the front passes its middle */
-    transition: color 0.08s 0.15s;
+    /* the label turns once the fill has opened under it */
+    transition: color 0.1s 0.16s;
   }
   .pill::before,
   .hover-fill::before {
@@ -114,14 +120,13 @@ a {
     inset: -8px;
     z-index: -1;
     pointer-events: none;
-    background:
-      radial-gradient(circle at calc(var(--fill) + 8px) 50%, var(--hover) 0 7px, transparent 7.5px),
-      radial-gradient(circle at calc(var(--fill) - 22px) 50%, var(--hover) 0 20px, transparent 20.5px),
-      linear-gradient(90deg, var(--hover) calc(var(--fill) - 22px), transparent calc(var(--fill) - 22px));
-    background-repeat: no-repeat;
+    background: linear-gradient(var(--hover), var(--hover)) center / var(--fill-w) var(--fill-h) no-repeat;
     filter: url(#goo-fill);
     clip-path: inset(8px round 999px);
-    transition: --fill 0.46s cubic-bezier(0.6, 0, 0.2, 1);
+    /* the height fills a little sooner, so the blob opens into a pill shape; a slight overshoot */
+    transition:
+      --fill-w 0.5s cubic-bezier(0.5, 0, 0.2, 1.1),
+      --fill-h 0.36s cubic-bezier(0.5, 0, 0.2, 1.1);
   }
   .pill:hover:not(:disabled),
   .hover-fill:hover:not(:disabled) {
@@ -129,7 +134,8 @@ a {
   }
   .pill:hover:not(:disabled)::before,
   .hover-fill:hover:not(:disabled)::before {
-    --fill: 125%;
+    --fill-w: 100%;
+    --fill-h: 100%;
   }
 }
 
