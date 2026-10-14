@@ -4,6 +4,7 @@
   // player's clicks and status, never their article. The search for the shortest route starts as
   // soon as the course is set, so everyone's reveal is ready.
   import { onDestroy } from 'svelte';
+  import SiteHeader from '../components/SiteHeader.svelte';
   import CourseHero from '../components/CourseHero.svelte';
   import Footer from '../components/Footer.svelte';
   import ResultsTable, { type ResultRow } from '../components/ResultsTable.svelte';
@@ -288,7 +289,7 @@
   {/key}
   {#if connection === 'lost'}<p class="lost" role="status">Reconnecting to the room…</p>{/if}
 {:else}
-  <header class="top"><a class="wordmark" href="/">wikiracer</a></header>
+  <SiteHeader plain />
   <main class="room" id="main">
     {#if stage === 'problem'}
       <h1 class="missing">{problem}</h1>
@@ -380,12 +381,6 @@
 </Sheet>
 
 <style>
-  .top {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: calc(16px + env(safe-area-inset-top)) var(--gutter) 0;
-    font-size: var(--size-20);
-  }
   .room {
     display: grid;
     gap: 32px;

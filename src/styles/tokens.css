@@ -35,6 +35,8 @@
   --size-display: clamp(2.6rem, min(11vw, 13svh), 5.9rem);
 
   --gutter: 16px;
+  /* the site header's side padding: the window's edge, not the page column's */
+  --edge: clamp(var(--gutter), 3vw, 40px);
   --measure: 68ch;
 }
 

@@ -1,14 +1,18 @@
 <script lang="ts">
-  // The top bar on home and the daily page: the wordmark, About, and the menu (the theme).
+  // The top bar across the window: the wordmark top left; About and the menu (the theme) top right,
+  // or the wordmark alone (plain) on the race, result, room and challenge pages.
+  import Wordmark from './Wordmark.svelte';
   import { getTheme, setTheme, type Theme } from '../data/theme';
+
+  let { plain = false }: { plain?: boolean } = $props();
 
   let theme = $state<Theme>(getTheme());
   const pick = (t: Theme) => (setTheme(t), (theme = t));
 </script>
 
 <header class="top">
-  <a class="wordmark" href="/">
-    <svg viewBox="0 0 28 12" aria-hidden="true"><path d="M5 6h18" /><circle class="s" cx="5" cy="6" r="3.5" /><circle class="f" cx="23" cy="6" r="3.5" /></svg>wikiracer</a>
+  <Wordmark />
+  {#if !plain}
   <a class="about" href="/about/">About</a>
   <button class="menu-btn" type="button" popovertarget="site-menu" aria-label="Menu">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>
@@ -22,6 +26,7 @@
       {/each}
     </fieldset>
   </div>
+  {/if}
 </header>
 
 <style>
@@ -29,32 +34,14 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-height: calc(64px + env(safe-area-inset-top));
     /* the full width of the window, not the page column: the wordmark top left, the menu top
-       right, and the menu opens under its button without covering the page */
-    --edge: clamp(var(--gutter), 3vw, 40px);
+       right, and the menu opens under its button */
     padding: calc(10px + env(safe-area-inset-top)) max(var(--edge), env(safe-area-inset-right)) 10px max(var(--edge), env(safe-area-inset-left));
   }
-  .wordmark {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
+  /* the wordmark takes the free space, so About and the menu sit at the right */
+  .top > :global(.wordmark) {
     margin-right: auto;
-    font-size: var(--size-20);
-  }
-  .wordmark svg {
-    width: 28px;
-    height: 12px;
-  }
-  .wordmark path {
-    stroke: var(--line);
-    stroke-width: 2;
-  }
-  .wordmark .s {
-    fill: var(--signal);
-  }
-  .wordmark .f {
-    fill: var(--flare);
   }
   .about {
     display: none;

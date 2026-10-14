@@ -2,6 +2,7 @@
   // A challenge: the course and its table. Before you've played, nicknames, clicks and times (a
   // target to beat); after, every route. Race it opens the race with the code attached.
   import { onDestroy } from 'svelte';
+  import SiteHeader from '../components/SiteHeader.svelte';
   import CourseHero from '../components/CourseHero.svelte';
   import Footer from '../components/Footer.svelte';
   import ResultsTable, { type ResultRow } from '../components/ResultsTable.svelte';
@@ -45,7 +46,7 @@
   onDestroy(() => client?.terminate());
 </script>
 
-<header class="top"><a class="wordmark" href="/">wikiracer</a></header>
+<SiteHeader plain />
 
 {#if problem}
   <main class="page" id="main">
@@ -86,12 +87,6 @@
 <Footer />
 
 <style>
-  .top {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: calc(16px + env(safe-area-inset-top)) var(--gutter) 0;
-    font-size: var(--size-20);
-  }
   .ch {
     max-width: 760px;
     margin: 0 auto;

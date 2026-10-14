@@ -29,6 +29,8 @@
   // result. The shortest-route search starts before the race and runs unseen, so the reveal is
   // ready when the player arrives. No going back, no Find; a reload resumes the same race.
   import { flushSync, onDestroy, onMount } from 'svelte';
+  import SiteHeader from '../components/SiteHeader.svelte';
+  import Wordmark from '../components/Wordmark.svelte';
   import ChallengePanel from '../components/ChallengePanel.svelte';
   import FriendsSheet from '../components/FriendsSheet.svelte';
   import Article from '../components/Article.svelte';
@@ -410,7 +412,7 @@
 <p class="sr" aria-live="polite">{announce}</p>
 
 {#if phase === 'invalid' || phase === 'same'}
-  <header class="top"><a class="wordmark" href="/">wikiracer</a></header>
+  <SiteHeader plain />
   <main class="page" id="main">
     <h1 class="missing">{phase === 'same' ? 'Start and finish are the same article.' : 'This race link is incomplete.'}</h1>
     <p class="lede">{phase === 'same' ? 'Pick a different finish to race.' : 'It needs a start and a finish. Ask for the link again, or pick a course yourself.'}</p>
@@ -418,7 +420,7 @@
   </main>
   <Footer />
 {:else if phase === 'card'}
-  <header class="top"><a class="wordmark" href="/">wikiracer</a></header>
+  <SiteHeader plain />
   <main class="card" id="main">
     <CourseHero {from} {to} />
     <section class="how" aria-labelledby="rules-head">
@@ -447,7 +449,7 @@
   <a class="skip" href="#article">Skip to article</a>
   <div class="race">
     <header class="hud">
-      <a class="wordmark" href="/">wikiracer</a>
+      <Wordmark />
       {@render hudStats()}
       <button class="menu-btn" type="button" popovertarget="race-menu" aria-label="Menu">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>
@@ -481,7 +483,7 @@
     </fieldset>
   </div>
 {:else}
-  <header class="top"><a class="wordmark" href="/">wikiracer</a></header>
+  <SiteHeader plain />
   <main class="result" id="main">
     <h1 class="course-line">{displayTitle(from)} <span>to</span> {displayTitle(to)}</h1>
     <Reveal
@@ -586,12 +588,6 @@
 </Sheet>
 
 <style>
-  .top {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: calc(16px + env(safe-area-inset-top)) var(--gutter) 0;
-    font-size: var(--size-20);
-  }
   .missing {
     margin: 0 0 16px;
     font: 760 var(--size-39) / 1 var(--font);
@@ -748,7 +744,7 @@
     background: var(--bg);
     view-transition-name: hud;
   }
-  .hud .wordmark {
+  .hud :global(.wordmark) {
     display: none;
   }
   .finish-chip {
@@ -917,29 +913,29 @@
       position: sticky;
       top: 0;
       bottom: auto;
-      min-height: 56px;
-      padding: 0 12px 0 var(--gutter);
+      /* the site header's height and edges, so the wordmark and the menu sit where they do on
+         every other page */
+      min-height: 65px; /* 64 px and the 1 px rule under it */
+      padding: 0 var(--edge);
       border-top: 0;
       border-bottom: 1px solid var(--line);
     }
-    .hud .wordmark {
-      display: block;
-      flex: none;
+    .hud :global(.wordmark) {
+      display: inline-flex;
       margin-right: 12px;
-      font-size: var(--size-20);
     }
     .finish-chip {
       flex: 0 1 auto;
       margin-left: auto;
     }
     .strip {
-      top: 56px;
+      top: 65px;
     }
     .menu {
-      inset: 60px 12px auto auto;
+      inset: 68px var(--edge) auto auto;
     }
     .toast {
-      top: 112px;
+      top: 120px;
     }
   }
   /* desktop rails: the finish, the stats and the trail move to the right */
@@ -961,7 +957,7 @@
     }
     .rail {
       position: sticky;
-      top: 80px;
+      top: 88px;
       display: grid;
       align-content: start;
       gap: 20px;

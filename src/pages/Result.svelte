@@ -3,6 +3,7 @@
   // time show at once; the routes stay behind a spoiler button, which runs the search and the
   // reveal, unless this browser has already finished the course.
   import { onDestroy } from 'svelte';
+  import SiteHeader from '../components/SiteHeader.svelte';
   import CourseHero from '../components/CourseHero.svelte';
   import Footer from '../components/Footer.svelte';
   import Reveal from '../components/Reveal.svelte';
@@ -46,9 +47,7 @@
   });
 </script>
 
-<header class="top">
-  <a class="wordmark" href="/">wikiracer</a>
-</header>
+<SiteHeader plain />
 
 {#if !shared}
   <main class="page" id="main">
@@ -85,12 +84,6 @@
 <Footer />
 
 <style>
-  .top {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: calc(16px + env(safe-area-inset-top)) var(--gutter) 0;
-    font-size: var(--size-20);
-  }
   .result,
   .page {
     max-width: 1180px;
