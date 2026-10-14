@@ -1,8 +1,36 @@
+<script lang="ts" module>
+  import type { Snippet } from 'svelte';
+  import type { SearchSession as Session } from '../search/session';
+
+  // A live room's round: the room page owns the course, the search and the connection, and hears
+  // every move. The race runs exactly as a solo one inside it.
+  export interface RoomRace {
+    from: string;
+    to: string;
+    // unique per room and round (sessionStorage key for a reload)
+    key: string;
+    // local time the race begins (the countdown runs to it)
+    startAt: number;
+    session: Session | null;
+    onmove(clicks: number, title: string): void;
+    onfinish(clicks: number, timeMs: number, route: string[]): void;
+    ongiveup(clicks: number): void;
+    onleave(): void;
+    board: Snippet<['bar' | 'rail']>;
+    // the room's table, above the splits in the result
+    table: Snippet;
+    // other players' routes, drawn on the result's map once the round ends
+    others: string[][];
+  }
+</script>
+
 <script lang="ts">
-  // A solo race: the start card (no par), the race itself, then the reveal and the result. The
-  // shortest-route search starts with the start card and runs unseen, so the reveal is ready when
-  // the player arrives. No going back, no Find; a reload resumes the same race.
+  // A race: the start card (no par) or a room's countdown, the race itself, then the reveal and the
+  // result. The shortest-route search starts before the race and runs unseen, so the reveal is
+  // ready when the player arrives. No going back, no Find; a reload resumes the same race.
   import { flushSync, onDestroy, onMount } from 'svelte';
+  import ChallengePanel from '../components/ChallengePanel.svelte';
+  import FriendsSheet from '../components/FriendsSheet.svelte';
   import Article from '../components/Article.svelte';
   import CourseHero from '../components/CourseHero.svelte';
   import Footer from '../components/Footer.svelte';
@@ -24,15 +52,24 @@
   import { normaliseTitle } from '../search/titles';
   import { WikiError } from '../wiki/api';
 
+  let { room = null }: { room?: RoomRace | null } = $props();
+  // the room page remounts this per round, so the round's details are read once
+  // svelte-ignore state_referenced_locally
+  const inRoom = room;
+
   const q = new URLSearchParams(location.search);
   const param = (k: string) => (q.get(k)?.trim() ? normaliseTitle(q.get(k)!) : '');
-  const from = param('from');
-  const to = param('to');
-  const extra = { ...(q.get('daily') ? { daily: q.get('daily')! } : {}), ...(q.get('ch') ? { ch: q.get('ch')! } : {}) };
+  const from = inRoom ? inRoom.from : param('from');
+  const to = inRoom ? inRoom.to : param('to');
+  const extra = inRoom ? {} : { ...(q.get('daily') ? { daily: q.get('daily')! } : {}), ...(q.get('ch') ? { ch: q.get('ch')! } : {}) };
+  const storeKey = inRoom ? `wikiracer.room.${inRoom.key}` : undefined;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  type Phase = 'invalid' | 'same' | 'card' | 'race' | 'result';
-  let phase = $state<Phase>(!from || !to ? 'invalid' : sameTitle(from, to) ? 'same' : 'card');
+  type Phase = 'invalid' | 'same' | 'card' | 'countdown' | 'race' | 'result';
+  let phase = $state<Phase>(!from || !to ? 'invalid' : sameTitle(from, to) ? 'same' : inRoom ? 'countdown' : 'card');
+  let left = $state(5);
+  let friendsOpen = $state(false);
+  let leaveOpen = $state(false);
   let race = $state.raw<RaceState>(newRace(from, to, extra));
   let article = $state.raw<Loaded | null>(null);
   let pending = $state('');
@@ -69,6 +106,11 @@
   const deadEnd = $derived(!!article && article.links.size === 0);
 
   function startSearch() {
+    if (inRoom) {
+      session = inRoom.session;
+      client = inRoom.session?.client ?? null;
+      return;
+    }
     if (!supported()) return;
     client ??= new SearchClient();
     session = new SearchSession(client, from, to, startTier().drawBudget);
@@ -86,7 +128,7 @@
     say(why === 'back' ? "You can't go back in a race. To leave, give up from the menu." : 'Find is off during a race. Read and scroll.');
   }
 
-  const save = () => saveRace(race);
+  const save = () => saveRace(race, undefined, storeKey);
 
   function load(title: string, signal: AbortSignal) {
     return loadArticle(title, { signal, onSlowDown: () => say('Wikipedia asked me to slow down. Retrying…') });
@@ -127,6 +169,7 @@
       race = land(race, a.title);
       save();
       if (race.status === 'finished') return finish();
+      if (inRoom && n > 0) inRoom.onmove(n, a.title);
       article = a;
       pending = '';
       timer.start();
@@ -202,6 +245,8 @@
     race = { ...race, status: 'finished' };
     save();
     markFinished(from, to);
+    // the room checks the route against the course's own titles, whatever redirects were followed
+    inRoom?.onfinish(n, Math.round(elapsedMs(race)), [from, ...race.route.slice(1, -1), to]);
     end();
   }
 
@@ -209,8 +254,16 @@
     confirmOpen = false;
     race = giveUp(addTime(race, timer.stop()));
     save();
+    inRoom?.ongiveup(n);
     end();
     afterGiveUp();
+  }
+
+  function leaveRoom() {
+    leaveOpen = false;
+    stopGuard?.();
+    stopGuard = null;
+    inRoom?.onleave();
   }
 
   // The second search, from where the player gave up, once the first has finished with the worker
@@ -248,14 +301,23 @@
     setTheme(t);
   }
 
-  function openFromMenu(which: 'giveUp' | 'rules') {
+  function openFromMenu(which: 'giveUp' | 'rules' | 'leave') {
     menu?.hidePopover?.();
     if (which === 'giveUp') confirmOpen = true;
+    else if (which === 'leave') leaveOpen = true;
     else rulesOpen = true;
   }
 
-  // the clock text, from the saved legs plus the leg on screen
-  const tickTimer = setInterval(() => (elapsed = elapsedMs(race) + timer.peek()), 250);
+  // the clock text, from the saved legs plus the leg on screen; in a room, the countdown too
+  const tickTimer = setInterval(() => {
+    elapsed = elapsedMs(race) + timer.peek();
+    if (phase === 'countdown' && inRoom) {
+      const next = Math.max(0, Math.ceil((inRoom.startAt - Date.now()) / 1000));
+      if (next !== left && next > 0 && next <= 3) announce = String(next);
+      left = next;
+    }
+  }, 100);
+  let countdownTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Hidden or closed: the time so far is saved; shown again from the back-forward cache: resumed
   function onHide() {
@@ -271,9 +333,9 @@
   addEventListener('pageshow', onShow);
 
   onMount(() => {
-    if (phase !== 'card') return;
+    if (phase !== 'card' && phase !== 'countdown') return;
     startSearch();
-    const saved = loadRace(from, to);
+    const saved = loadRace(from, to, undefined, storeKey);
     if (saved?.status === 'racing' && saved.route.length) {
       race = saved;
       phase = 'race';
@@ -284,19 +346,39 @@
       race = saved;
       phase = 'result';
       if (saved.status === 'gaveUp') afterGiveUp();
+    } else if (inRoom) {
+      // every device loads the start article during the countdown, so nobody starts behind
+      announce = 'Starting in 5';
+      prefetchStart();
+      countdownTimer = setTimeout(() => {
+        announce = 'Go';
+        begin();
+      }, Math.max(0, inRoom.startAt - Date.now()));
     } else {
-      press(from);
+      prefetchStart();
     }
   });
+
+  function prefetchStart() {
+    const ctrl = new AbortController();
+    const promise = load(from, ctrl.signal);
+    promise.catch(() => undefined);
+    prefetch = { title: from, ctrl, promise };
+  }
 
   onDestroy(() => {
     clearInterval(tickTimer);
     clearTimeout(toastTimer);
+    clearTimeout(countdownTimer);
     removeEventListener('pagehide', onHide);
     removeEventListener('pageshow', onShow);
     stopGuard?.();
-    session?.cancel();
-    client?.terminate();
+    prefetch?.ctrl.abort();
+    // a room's search and worker belong to the room page
+    if (!inRoom) {
+      session?.cancel();
+      client?.terminate();
+    }
   });
 </script>
 
@@ -343,9 +425,22 @@
     </section>
     <div class="go">
       <button class="pill primary" type="button" onclick={begin}>Start the race</button>
+      {#if !extra.ch}<button class="pill secondary" type="button" onclick={() => (friendsOpen = true)}>Race with friends</button>{/if}
     </div>
   </main>
   <Footer />
+  <FriendsSheet bind:open={friendsOpen} {from} {to} />
+{:else if phase === 'countdown'}
+  <div class="race">
+    <div class="strip">{@render inRoom?.board('bar')}</div>
+    <main class="countdown" id="main">
+      <p class="cd-label">Start</p>
+      <h1 class="cd-title">{displayTitle(from)}</h1>
+      <p class="cd-to">to {displayTitle(to)}</p>
+      <p class="cd-num" aria-hidden="true">{#key left}<span>{left > 0 && left <= 3 ? left : ''}</span>{/key}</p>
+      {#if left > 3}<p class="cd-ready">Get ready</p>{/if}
+    </main>
+  </div>
 {:else if phase === 'race'}
   <a class="skip" href="#article">Skip to article</a>
   <div class="race">
@@ -356,12 +451,13 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>
       </button>
     </header>
-    <div class="strip"><Trail route={race.route} {to} /></div>
+    <div class="strip"><Trail route={race.route} {to} />{@render inRoom?.board('bar')}</div>
     <div class="layout">
       <main id="article" tabindex="-1" bind:this={view}>
         <Article {article} {pending} onmove={follow} onpress={press} note={loadError ? errorNote : deadEnd ? deadEndNote : undefined} />
       </main>
       <aside class="rail" aria-label="Race">
+        {@render inRoom?.board('rail')}
         <div class="rail-finish">
           <span class="rail-label">Finish</span>
           <span class="rail-title">{displayTitle(to)}</span>
@@ -374,6 +470,7 @@
   <div id="race-menu" class="menu" popover="auto" bind:this={menu}>
     <button class="item" type="button" onclick={() => openFromMenu('giveUp')}>Give up</button>
     <button class="item" type="button" onclick={() => openFromMenu('rules')}>Rules</button>
+    {#if inRoom}<button class="item" type="button" onclick={() => openFromMenu('leave')}>Leave room</button>{/if}
     <fieldset class="themes">
       <legend>Theme</legend>
       {#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as const as [value, name] (value)}
@@ -396,10 +493,13 @@
       finished={race.status === 'finished'}
       bind:takeover
       extra={resultExtra}
+      others={room?.others ?? []}
     />
-    <div class="after">
-      <a class="pill secondary" href="/">Pick another course</a>
-    </div>
+    {#if !inRoom}
+      <div class="after">
+        <a class="pill secondary" href="/">Pick another course</a>
+      </div>
+    {/if}
   </main>
   <Footer />
 {/if}
@@ -427,6 +527,10 @@
 {/snippet}
 
 {#snippet resultExtra()}
+  {@render inRoom?.table()}
+  {#if extra.ch}
+    <ChallengePanel code={extra.ch} {from} {to} checkRoutes={session ? (r) => session!.client.check(r) : null} result={{ status: race.status === 'finished' ? 'finished' : 'gaveup', clicks: n, timeMs: Math.round(elapsedMs(race)), route: [from, ...race.route.slice(1, race.status === 'finished' ? -1 : undefined), ...(race.status === 'finished' ? [to] : [])] }} />
+  {/if}
   {@render fromHereNote()}
   {#if race.route.length > 1}
     <table class="splits">
@@ -439,7 +543,7 @@
       </tbody>
     </table>
   {/if}
-  {#if race.status === 'finished'}
+  {#if race.status === 'finished' && !inRoom}
     <div class="share-row"><ShareButton text={card} /></div>
   {/if}
 {/snippet}
@@ -464,6 +568,14 @@
   <div class="sheet-actions">
     <button class="pill primary" type="button" onclick={quit}>Give up</button>
     <button class="pill secondary" type="button" onclick={() => (confirmOpen = false)}>Keep racing</button>
+  </div>
+</Sheet>
+
+<Sheet bind:open={leaveOpen} title="Leave the room?">
+  <p class="sheet-text">Leaving during a race counts as giving up. Your seat stays yours if you come back with this browser.</p>
+  <div class="sheet-actions">
+    <button class="pill primary" type="button" onclick={leaveRoom}>Leave room</button>
+    <button class="pill secondary" type="button" onclick={() => (leaveOpen = false)}>Keep racing</button>
   </div>
 </Sheet>
 
@@ -530,6 +642,71 @@
     .go .pill {
       width: 100%;
     }
+  }
+
+  /* A room's countdown: the start article's title, then 3, 2, 1 over it */
+  .countdown {
+    position: relative;
+    display: grid;
+    align-content: center;
+    min-height: calc(100dvh - 120px);
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: 24px var(--gutter);
+  }
+  .cd-label,
+  .cd-to,
+  .cd-ready {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--size-20);
+  }
+  .cd-title {
+    margin: 4px 0 8px;
+    font-size: var(--size-display);
+    font-weight: 780;
+    font-stretch: var(--stretch-display);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .cd-num {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    pointer-events: none;
+  }
+  .cd-num span {
+    color: var(--signal);
+    font-size: clamp(8rem, 40vw, 16rem);
+    font-weight: 800;
+    font-stretch: 125%;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 24px var(--bg);
+    animation: cd-in 900ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  }
+  @keyframes cd-in {
+    from {
+      transform: scale(1.4);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cd-num span {
+      animation: none;
+    }
+  }
+  .go {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   /* Race */

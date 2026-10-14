@@ -54,3 +54,20 @@ export type ServerMessage =
   | ({ t: 'state' } & RoomState)
   | { t: 'standings'; round: number; rows: StandingRow[] }
   | { t: 'error'; code: ErrorCode };
+
+// A challenge table row; `route` only once the viewer has a result of their own
+export interface ChallengeRow {
+  name: string;
+  status: 'finished' | 'gaveup';
+  clicks: number;
+  timeMs: number;
+  at: number;
+  you: boolean;
+  place: number;
+  route?: string[];
+}
+
+// GET /api/course/:code
+export type CourseInfo =
+  | ({ mode: 'live'; created: number } & RoomState)
+  | { mode: 'challenge'; from: string; to: string; created: number; full: boolean; played: boolean; rows: ChallengeRow[] };

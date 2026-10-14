@@ -74,9 +74,9 @@ export class Clock {
 
 const KEY = 'wikiracer.race';
 
-export function saveRace(s: RaceState, store: Pick<Storage, 'setItem'> | null = sessionStore()): boolean {
+export function saveRace(s: RaceState, store: Pick<Storage, 'setItem'> | null = sessionStore(), key = KEY): boolean {
   try {
-    store?.setItem(KEY, JSON.stringify(s));
+    store?.setItem(key, JSON.stringify(s));
     return !!store;
   } catch {
     return false;
@@ -84,9 +84,10 @@ export function saveRace(s: RaceState, store: Pick<Storage, 'setItem'> | null = 
 }
 
 // The saved race for this course, if the tab has one
-export function loadRace(from: string, to: string, store: Pick<Storage, 'getItem'> | null = sessionStore()): RaceState | null {
+// (a room's round has its own key, so a course raced twice in one room starts fresh)
+export function loadRace(from: string, to: string, store: Pick<Storage, 'getItem'> | null = sessionStore(), key = KEY): RaceState | null {
   try {
-    const s = JSON.parse(store?.getItem(KEY) ?? 'null') as RaceState | null;
+    const s = JSON.parse(store?.getItem(key) ?? 'null') as RaceState | null;
     if (!s || s.v !== 1 || s.from !== from || s.to !== to || !Array.isArray(s.route) || s.route.length !== s.legs.length) return null;
     return s;
   } catch {

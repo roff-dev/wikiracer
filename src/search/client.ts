@@ -99,7 +99,8 @@ export class SearchClient {
   }
 
   async lookup(titles: string[]): Promise<(TitleHit | null)[]> {
-    return (await this.request<'lookupResult'>({ kind: 'lookup', reqId: this.nextId++, titles })).results;
+    // plain copies: arrays from Svelte state are proxies, which postMessage can't clone
+    return (await this.request<'lookupResult'>({ kind: 'lookup', reqId: this.nextId++, titles: [...titles] })).results;
   }
 
   async prefix(q: string): Promise<TitleHit[]> {
@@ -107,11 +108,11 @@ export class SearchClient {
   }
 
   async titles(ids: number[]): Promise<string[]> {
-    return (await this.request<'titlesResult'>({ kind: 'titles', reqId: this.nextId++, ids })).titles;
+    return (await this.request<'titlesResult'>({ kind: 'titles', reqId: this.nextId++, ids: [...ids] })).titles;
   }
 
   async check(routes: string[][]): Promise<number[][]> {
-    return (await this.request<'checkResult'>({ kind: 'check', reqId: this.nextId++, routes })).missing;
+    return (await this.request<'checkResult'>({ kind: 'check', reqId: this.nextId++, routes: routes.map((r) => [...r]) })).missing;
   }
 
   // Links leaving and reaching an article (the setter refuses a course no route can finish)

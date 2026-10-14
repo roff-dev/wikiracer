@@ -59,5 +59,5 @@ export default defineConfig({
     },
   },
   // Rooms and challenges come from the Worker, run alongside with `wrangler dev`
-  server: { host: true, proxy: { '/api': 'http://localhost:8787' } },
+  server: { host: true, proxy: { '/api': { target: 'http://localhost:8787', ws: true } } },
 });

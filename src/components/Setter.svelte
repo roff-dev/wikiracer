@@ -3,6 +3,7 @@
   // a route can leave the start and reach the finish). No search runs before the race: it would
   // give the par away.
   import { onDestroy } from 'svelte';
+  import FriendsSheet from './FriendsSheet.svelte';
   import TitleField, { type Picked } from './TitleField.svelte';
   import { displayTitle } from '../data/share';
   import { SearchClient, supported } from '../search/client';
@@ -10,6 +11,10 @@
   import { mapDateText } from '../site';
   import { isDisambiguation, type Suggestion } from '../wiki/search';
 
+  // `onuse`: the course goes to the caller (a room's Change course) instead of opening a race
+  let { onuse }: { onuse?: (from: string, to: string) => void } = $props();
+
+  let friendsOpen = $state(false);
   let start = $state<Picked | null>(null);
   let finish = $state<Picked | null>(null);
   let online = $state(navigator.onLine);
@@ -86,7 +91,7 @@
   });
 </script>
 
-<form class="setter" onsubmit={(e) => (e.preventDefault(), ready && location.assign(href))}>
+<form class="setter" onsubmit={(e) => (e.preventDefault(), ready && (onuse ? onuse(start!.title, finish!.title) : location.assign(href)))}>
   <div class="ends">
     <TitleField role="start" bind:picked={start} onpick={(s) => pick('start', s)} {fallback} />
     <TitleField role="finish" bind:picked={finish} onpick={(s) => pick('finish', s)} {fallback} />
@@ -100,9 +105,12 @@
     <p class="msg">Start and finish are the same article.</p>
   {/if}
   <div class="actions">
-    <button class="pill primary" type="submit" disabled={!ready}>Race it</button>
+    <button class="pill primary" type="submit" disabled={!ready}>{onuse ? 'Use this course' : 'Race it'}</button>
+    {#if !onuse}<button class="pill secondary" type="button" disabled={!ready} onclick={() => (friendsOpen = true)}>Race with friends</button>{/if}
   </div>
 </form>
+
+{#if !onuse && start && finish}<FriendsSheet bind:open={friendsOpen} from={start.title} to={finish.title} />{/if}
 
 <style>
   .setter {

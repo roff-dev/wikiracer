@@ -16,6 +16,8 @@ export const REVEAL = {
   finish: '#FF74AC',
   shortest: '#FFFFFF',
   players: ['#FFD23F', '#8F8BFF', '#FF74AC', '#4FD8A4'],
+  // other players' routes in a room: clear of the fronts' emerald and magenta and of your yellow
+  others: ['#8F8BFF', '#5CC8FF', '#FF9F43'],
 };
 
 // Layout: the start and finish centres sit 3.2 rings apart; one ring per click of distance.

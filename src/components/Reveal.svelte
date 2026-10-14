@@ -8,7 +8,7 @@
   import { knownPar } from '../data/courses';
   import { clock, displayTitle, plural, scoreWords } from '../data/share';
   import { RevealDirector, type Label, type RevealBeat } from '../map/reveal';
-  import { MapRenderer } from '../map/renderer';
+  import { MapRenderer, REVEAL } from '../map/renderer';
   import { startTier } from '../map/tiers';
   import { routeAvoiding } from '../search/dag';
   import { running, type SearchSession, type SessionEvent, type SessionStatus } from '../search/session';
@@ -26,6 +26,7 @@
     finished = true,
     takeover = $bindable(false),
     extra,
+    others = [],
   }: {
     // null when this browser can't run the search
     session: SearchSession | null;
@@ -41,6 +42,8 @@
     finished?: boolean;
     takeover?: boolean;
     extra?: Snippet;
+    // other players' routes (a room's standings), drawn beside yours
+    others?: string[][];
   } = $props();
 
   type Status = SessionStatus | { kind: 'unsupported' };
@@ -217,6 +220,25 @@
       skip();
     }
   }
+
+  // Each other player's route in their own colour, once the shortest route is on the map
+  let othersDrawn = '';
+  $effect(() => {
+    const list = others;
+    if (status.kind !== 'found' || !list.length || !session || !director) return;
+    const key = JSON.stringify(list);
+    if (key === othersDrawn) return;
+    othersDrawn = key;
+    const client = session.client;
+    void Promise.all(list.map((r) => client.lookup(r).catch(() => null))).then((all) =>
+      all.forEach((hits, i) => {
+        let fake = -1000 * (i + 1);
+        const ids = list[i]!.map((_, j) => hits?.[j]?.id ?? fake--);
+        director?.renderer.setCourse(2 + i, ids, REVEAL.others[i % REVEAL.others.length]!, list[i]!.at(-1) !== to);
+        director?.renderer.drawCourse(2 + i);
+      }),
+    );
+  });
 
   onMount(() => {
     if (!session) {
