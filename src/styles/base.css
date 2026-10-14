@@ -69,6 +69,7 @@ a {
 }
 
 .pill.primary {
+  --btn-h: 52px;
   min-height: 52px;
   border: 0;
   background: var(--signal);
@@ -81,52 +82,53 @@ a {
   color: var(--ink);
 }
 
-/* Hover: a gooey fill grows out of the button's middle to its edges, the way the Surprise me
-   blob appears, and melts back into the middle on leave. One layer under the label: a rectangle
-   that grows from nothing, rounded into a blob by the goo filter every page carries (#goo-fill)
-   while it's small; the clip trims the filter's softened edge. Only where there's a real
-   pointer, so a tap on a phone doesn't leave it filled. */
-@property --fill-w {
-  syntax: '<percentage>';
+/* Hover: the Surprise me blob's own hover on every button. A pill the button's shape scales out
+   of its centre from a fifth of its size to all of it, with the blob's spring, and back on leave,
+   under the same goo filter (#goo-fill, carried by every page), which hides it while it's small.
+   Drawn as two end circles and a bar, all sized from --fill (the scale) and --btn-h (the
+   button's height); the clip trims the filter's softened edge. Only where there's a real pointer,
+   so a tap on a phone doesn't leave it filled. */
+@property --fill {
+  syntax: '<number>';
   inherits: false;
-  initial-value: 0%;
-}
-@property --fill-h {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 0%;
+  initial-value: 0.2;
 }
 
 .pill {
+  --btn-h: 44px;
   position: relative;
   isolation: isolate;
 }
 
-/* round icon buttons take the same fill; each one is already positioned in its component */
+/* round icon buttons (44 px) take the same fill; each one is already positioned in its component */
 .hover-fill {
+  --btn-h: 44px;
   isolation: isolate;
 }
 
 @media (hover: hover) {
   .pill,
   .hover-fill {
-    /* the label turns once the fill has opened under it */
-    transition: color 0.1s 0.16s;
+    /* the label turns as the fill opens under it */
+    transition: color 0.16s 0.04s;
   }
   .pill::before,
   .hover-fill::before {
     content: '';
     position: absolute;
-    inset: -8px;
+    inset: -14px;
     z-index: -1;
     pointer-events: none;
-    background: linear-gradient(var(--hover), var(--hover)) center / var(--fill-w) var(--fill-h) no-repeat;
+    /* the pill's straight part, then its two ends; 100% - 28px is the button's own width */
+    --bar: calc((100% - 28px - var(--btn-h)) * var(--fill));
+    --end: calc(var(--btn-h) * var(--fill) / 2);
+    background:
+      radial-gradient(circle at calc(50% - var(--bar) / 2) 50%, var(--hover) var(--end), transparent calc(var(--end) + 0.5px)),
+      radial-gradient(circle at calc(50% + var(--bar) / 2) 50%, var(--hover) var(--end), transparent calc(var(--end) + 0.5px)),
+      linear-gradient(var(--hover), var(--hover)) center / var(--bar) calc(var(--end) * 2) no-repeat;
     filter: url(#goo-fill);
-    clip-path: inset(8px round 999px);
-    /* the height fills a little sooner, so the blob opens into a pill shape; a slight overshoot */
-    transition:
-      --fill-w 0.5s cubic-bezier(0.5, 0, 0.2, 1.1),
-      --fill-h 0.36s cubic-bezier(0.5, 0, 0.2, 1.1);
+    clip-path: inset(14px round 999px);
+    transition: --fill 0.32s cubic-bezier(0.3, 0.8, 0.35, 1.2);
   }
   .pill:hover:not(:disabled),
   .hover-fill:hover:not(:disabled) {
@@ -134,8 +136,7 @@ a {
   }
   .pill:hover:not(:disabled)::before,
   .hover-fill:hover:not(:disabled)::before {
-    --fill-w: 100%;
-    --fill-h: 100%;
+    --fill: 1;
   }
 }
 
