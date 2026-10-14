@@ -29,9 +29,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: calc(10px + env(safe-area-inset-top)) var(--gutter) 10px;
+    /* the full width of the window, not the page column: the wordmark top left, the menu top
+       right, and the menu opens under its button without covering the page */
+    --edge: clamp(var(--gutter), 3vw, 40px);
+    padding: calc(10px + env(safe-area-inset-top)) max(var(--edge), env(safe-area-inset-right)) 10px max(var(--edge), env(safe-area-inset-left));
   }
   .wordmark {
     display: inline-flex;
@@ -91,7 +92,8 @@
   }
   .menu {
     position: fixed;
-    inset: calc(60px + env(safe-area-inset-top)) 12px auto auto;
+    /* under the button, its right edge on the header's */
+    inset: calc(60px + env(safe-area-inset-top)) max(var(--edge), env(safe-area-inset-right)) auto auto;
     min-width: 220px;
     margin: 0;
     padding: 8px;
