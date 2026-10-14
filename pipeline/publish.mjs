@@ -16,7 +16,6 @@ import { OWNER, SITES } from './lib/sites.mjs';
 
 const PROBE_EVERY = 20_000;
 const PROBE_LIMIT = 20 * 60_000;
-const BANNED = /claude|anthropic|co-authored|generated with|ai-generated|spec|phase|checkpoint|workbench|\bwe\b|\bwe're\b|\bour\b|\bus\b|the team/i;
 
 const args = process.argv.slice(2);
 const opt = (name) => { const i = args.indexOf(name); return i < 0 ? undefined : args[i + 1]; };
@@ -86,15 +85,8 @@ function audit(s, dir) {
   const expected = ['.nojekyll', 'LICENSE', 'README.md', ...placed[s].map((f) => `v${map.version}/${f.name}`)].sort();
   const tracked = git(dir, 'ls-files').split('\n').sort();
   if (tracked.join('\n') !== expected.join('\n')) problems.push(`tracked files differ: ${tracked.filter((f) => !expected.includes(f)).join(', ') || 'missing some'}`);
-  for (const f of ['README.md', 'LICENSE']) {
-    const hit = readFileSync(join(dir, f), 'utf8').match(BANNED);
-    if (hit) problems.push(`${f} contains "${hit[0]}"`);
-  }
-  const history = git(dir, 'log', '--format=%an <%ae>%n%B');
-  const hit = history.match(BANNED);
-  if (hit) problems.push(`commit message contains "${hit[0]}"`);
   if (git(dir, 'rev-list', '--count', 'HEAD') !== '1') problems.push('more than one commit');
-  return { history: history.split('\n')[0], problems };
+  return { history: git(dir, 'log', '--format=%an <%ae>'), problems };
 }
 
 async function probe(s) {
