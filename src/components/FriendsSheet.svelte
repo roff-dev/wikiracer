@@ -1,8 +1,8 @@
 <script lang="ts">
   // Race with friends: a live room or a challenge link on this course. A nickname, an invisible
-  // Turnstile check, then the code (large, 3 + 3), its link, and Share or Copy.
+  // Turnstile check, then the code (large, 3 + 3) and its link, each with a copy button.
   import Sheet from './Sheet.svelte';
-  import ShareButton from './ShareButton.svelte';
+  import CopyButton from './CopyButton.svelte';
   import { checkName, showCode } from '../../worker/names';
   import type { Mode } from '../../worker/protocol';
   import { displayTitle } from '../data/share';
@@ -21,11 +21,6 @@
 
   const link = $derived(code ? `${location.origin}/${mode === 'live' ? 'room' : 'challenge'}/?c=${code}` : '');
   const go = $derived(code ? (mode === 'live' ? `/room/?c=${code}` : `/race/?${new URLSearchParams({ from, to, ch: code })}`) : '');
-  const invite = $derived(
-    mode === 'live'
-      ? `Race me on Wikiracer: ${displayTitle(from)} to ${displayTitle(to)}. Room ${code ? showCode(code) : ''}\n${link}`
-      : `Beat my route on Wikiracer: ${displayTitle(from)} to ${displayTitle(to)}\n${link}`,
-  );
 
   async function create(e: SubmitEvent) {
     e.preventDefault();
@@ -107,11 +102,16 @@
   {:else}
     <div class="made">
       <p class="label">{mode === 'live' ? 'Room code' : 'Challenge code'}</p>
-      <button class="code" type="button" onclick={copyCode} aria-label="Code {code.split('').join(' ')}, tap to copy">{showCode(code)}</button>
+      <div class="code-row">
+        <button class="code" type="button" onclick={copyCode} aria-label="Code {code.split('').join(' ')}, tap to copy">{showCode(code)}</button>
+        <CopyButton bare text={code} label="Copy the code" />
+      </div>
       <p class="hint" aria-live="polite">{copied ? 'Code copied.' : 'Tap the code to copy it.'}</p>
-      <p class="link">{link}</p>
-      <ShareButton text={invite} />
-      <a class="pill secondary" href={go}>{mode === 'live' ? 'Go to the room' : 'Race it'}</a>
+      <div class="link-row">
+        <p class="link">{link}</p>
+        <CopyButton text={link} label="Copy the link" />
+      </div>
+      <a class="pill primary" href={go}>{mode === 'live' ? 'Go to the room' : 'Race it'}</a>
     </div>
   {/if}
 </Sheet>
@@ -182,6 +182,24 @@
     color: var(--ink-2);
     font-size: var(--size-13);
   }
+  /* the code and its copy icon on one line; the row carries the code's size, so the icon
+     follows it */
+  .code-row {
+    display: flex;
+    align-items: center;
+    gap: 0.15em;
+    font-size: clamp(2.6rem, 14vw, 4rem);
+  }
+  .link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 4px 4px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--bg-sunk);
+  }
   /* the code: Mona Sans width 125, weight 800, grouped 3 + 3 */
   .code {
     justify-self: start;
@@ -189,7 +207,7 @@
     border: 0;
     background: none;
     color: var(--ink);
-    font: 800 clamp(2.6rem, 14vw, 4rem) / 1 var(--font);
+    font: 800 1em / 1 var(--font);
     font-stretch: 125%;
     letter-spacing: 0.04em;
     cursor: pointer;

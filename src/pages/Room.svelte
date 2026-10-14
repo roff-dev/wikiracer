@@ -9,12 +9,12 @@
   import Footer from '../components/Footer.svelte';
   import ResultsTable, { type ResultRow } from '../components/ResultsTable.svelte';
   import Setter from '../components/Setter.svelte';
-  import ShareButton from '../components/ShareButton.svelte';
+  import CopyButton from '../components/CopyButton.svelte';
   import Sheet from '../components/Sheet.svelte';
   import { normaliseCode, showCode } from '../../worker/names';
   import type { ErrorCode, PlayerState, RoomState, StandingRow } from '../../worker/protocol';
   import { surprise, type Difficulty } from '../data/pools';
-  import { clock, displayTitle, plural } from '../data/share';
+  import { clock, plural } from '../data/share';
   import { REVEAL } from '../map/renderer';
   import { startTier } from '../map/tiers';
   import { RoomApiError, getCourse, restingText, saveName, savedName, seatFor } from '../room/api';
@@ -318,9 +318,15 @@
     {:else if room}
       <section class="invite" aria-label="Invitation">
         <p class="label">Room code</p>
-        <button class="code" type="button" onclick={copyCode} aria-label="Room code {code!.split('').join(' ')}, tap to copy">{showCode(code!)}</button>
+        <div class="code-row">
+          <button class="code" type="button" onclick={copyCode} aria-label="Room code {code!.split('').join(' ')}, tap to copy">{showCode(code!)}</button>
+          <CopyButton bare text={code!} label="Copy the code" />
+        </div>
         <p class="hint" aria-live="polite">{copied ? 'Code copied.' : 'Tap the code to copy it. Friends join with the code or the link.'}</p>
-        <ShareButton text={`Race me on Wikiracer: ${displayTitle(room.from)} to ${displayTitle(room.to)}. Room ${showCode(code!)}\n${link}`} />
+        <div class="link-row">
+          <p class="link">{link}</p>
+          <CopyButton text={link} label="Copy the link" />
+        </div>
       </section>
 
       <section class="course">
@@ -418,13 +424,39 @@
     justify-items: start;
     gap: 8px;
   }
+  /* the code and its copy icon on one line; the row carries the code's size, so the icon
+     follows it */
+  .code-row {
+    display: flex;
+    align-items: center;
+    gap: 0.15em;
+    font-size: clamp(2.8rem, min(15vw, 18svh), 4.75rem);
+  }
+  .link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    justify-self: stretch;
+    max-width: 520px;
+    padding: 4px 4px 4px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--bg-sunk);
+  }
+  .link {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--size-13);
+    overflow-wrap: anywhere;
+  }
   /* the code: Mona Sans width 125, weight 800, grouped 3 + 3 */
   .code {
     padding: 0;
     border: 0;
     background: none;
     color: var(--ink);
-    font: 800 clamp(2.8rem, min(15vw, 18svh), 4.75rem) / 1 var(--font);
+    font: 800 1em / 1 var(--font);
     font-stretch: 125%;
     letter-spacing: 0.04em;
     cursor: pointer;
