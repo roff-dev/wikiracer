@@ -24,6 +24,7 @@
     seconds,
     voice,
     finished = true,
+    stopped = false,
     takeover = $bindable(false),
     extra,
     others = [],
@@ -40,6 +41,8 @@
     voice: 'shared' | 'race';
     // false when the player gave up
     finished?: boolean;
+    // a timed room's player who stopped once someone had won: no map, the route marked incomplete
+    stopped?: boolean;
     takeover?: boolean;
     extra?: Snippet;
     // other players' routes (a room's standings), drawn beside yours
@@ -83,13 +86,13 @@
       : `Search map: ${plural(explored, 'article')} explored from both ends.`,
   );
   const topLine = $derived(
-    shared ? `This race: ${plural(clicks, 'click')} in ${clock(seconds)}` : finished ? `You made it: ${plural(clicks, 'click')} in ${clock(seconds)}.` : `You gave up after ${plural(clicks, 'click')}.`,
+    shared ? `This race: ${plural(clicks, 'click')} in ${clock(seconds)}` : finished ? `You made it: ${plural(clicks, 'click')} in ${clock(seconds)}.` : `You ${stopped ? 'stopped' : 'gave up'} after ${plural(clicks, 'click')}.`,
   );
 
   function found(distance: number): string {
     if (shared) return `This race took ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
     if (finished) return `You took ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
-    return `You gave up after ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
+    return `You ${stopped ? 'stopped' : 'gave up'} after ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
   }
 
   function startDirector() {
@@ -266,7 +269,7 @@
 <svelte:window onkeydown={onKey} />
 
 <section class="reveal" aria-labelledby="result-head">
-  <div class="stage" class:takeover class:static={staticView} onpointerup={skip} role="presentation">
+  {#if !stopped}<div class="stage" class:takeover class:static={staticView} onpointerup={skip} role="presentation">
     {#if !staticView}
       <div class="canvas-wrap" role="img" aria-label={canvasLabel}><canvas bind:this={canvas}></canvas></div>
       <div class="labels" aria-hidden="true">
@@ -289,7 +292,7 @@
     {#if staticView && (status.kind === 'searching' || status.kind === 'loading')}
       <p class="static-count">Explored {plural(explored, 'article')}</p>
     {/if}
-  </div>
+  </div>{/if}
 
   <div class="panel" class:hidden={!showText}>
     <p class="sr" aria-live="polite">{settled ? announce : ''}</p>
@@ -332,7 +335,7 @@
 
     <div class="routes">
       <section>
-        <h3><span class="key yours" aria-hidden="true"></span>{shared ? 'This race' : 'Your route'}</h3>
+        <h3><span class="key yours" aria-hidden="true"></span>{shared ? 'This race' : stopped ? 'Your route (incomplete)' : 'Your route'}</h3>
         <RouteLine titles={route} missing={playerMissing} open={!finished} />
       </section>
       {#if status.kind === 'found' && shortest.length}

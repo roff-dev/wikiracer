@@ -11,6 +11,12 @@
     key: string;
     // local time the race begins (the countdown runs to it)
     startAt: number;
+    // 'time': first to the finish wins, on a real-time clock from the start
+    scoring: 'clicks' | 'time';
+    // a timed round's first finisher, when it isn't you
+    winner: { name: string; timeMs: number } | null;
+    // your time on the room's clock, once you've finished
+    myTimeMs: number | null;
     session: Session | null;
     onmove(clicks: number, title: string): void;
     onfinish(clicks: number, timeMs: number, route: string[]): void;
@@ -66,6 +72,7 @@
   const to = inRoom ? inRoom.to : param('to');
   const extra = inRoom ? {} : { ...(q.get('daily') ? { daily: q.get('daily')! } : {}), ...(q.get('ch') ? { ch: q.get('ch')! } : {}) };
   const storeKey = inRoom ? `wikiracer.room.${inRoom.key}` : undefined;
+  const timed = inRoom?.scoring === 'time';
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   type Phase = 'invalid' | 'same' | 'card' | 'countdown' | 'race' | 'result';
@@ -90,6 +97,12 @@
   let session = $state.raw<SearchSession | null>(null);
   // after giving up: the shortest route from the article given up on
   let fromHere = $state<{ title: string; titles: string[] | null; done: boolean } | null>(null);
+  // a timed room: someone else won; stopped = went to the results instead of racing on
+  let winnerOpen = $state(false);
+  let winnerSeen = false;
+  let stopped = $state(readStopped());
+  // a timed finish on this device's clock, until the room's own time arrives
+  let realMs = $state<number | null>(null);
 
   let view = $state<HTMLElement>();
   let menu = $state<HTMLElement>();
@@ -103,7 +116,7 @@
   const n = $derived(clicks(race));
   let daily = $state<number | null>(null);
   if (extra.daily) void dailyNumber(extra.daily).then((d) => (daily = d));
-  const seconds = $derived(Math.round(elapsedMs(race) / 100) / 10);
+  const seconds = $derived(Math.round((timed ? (room?.myTimeMs ?? realMs ?? elapsedMs(race)) : elapsedMs(race)) / 100) / 10);
   const shared = $derived({ from, to, via: race.route.slice(1, -1), seconds });
   const card = $derived(shareText(shared, { url: resultUrl(shared, location.origin), ...(daily ? { daily } : {}) }));
   const deadEnd = $derived(!!article && article.links.size === 0);
@@ -231,6 +244,7 @@
 
   // Leaves race mode: guards off, the guard entry dropped from history
   function end() {
+    winnerOpen = false;
     timer.stop();
     stopGuard?.();
     stopGuard = null;
@@ -245,6 +259,7 @@
 
   function finish() {
     loading = false;
+    if (timed) realMs = Date.now() - inRoom!.startAt;
     race = { ...race, status: 'finished' };
     save();
     markFinished(from, to);
@@ -260,6 +275,39 @@
     save();
     inRoom?.ongiveup(n);
     end();
+    afterGiveUp();
+  }
+
+  // A timed room's winner is home: the others choose to race on or to see the results
+  $effect(() => {
+    if (room?.winner && phase === 'race' && !winnerSeen) {
+      winnerSeen = true;
+      winnerOpen = true;
+    }
+  });
+
+  function readStopped(): boolean {
+    try {
+      return !!storeKey && sessionStorage.getItem(`${storeKey}.stopped`) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  // Stopping counts as giving up; the result leaves out the map
+  function seeResults() {
+    winnerOpen = false;
+    stopped = true;
+    try {
+      sessionStorage.setItem(`${storeKey}.stopped`, '1');
+    } catch {
+      // a reload shows the map again, nothing worse
+    }
+    race = giveUp(addTime(race, timer.stop()));
+    save();
+    inRoom?.ongiveup(n);
+    end();
+    takeover = false;
     afterGiveUp();
   }
 
@@ -314,7 +362,7 @@
 
   // the clock text, from the saved legs plus the leg on screen; in a room, the countdown too
   const tickTimer = setInterval(() => {
-    elapsed = elapsedMs(race) + timer.peek();
+    elapsed = timed && phase === 'race' ? Math.max(0, Date.now() - inRoom!.startAt) : elapsedMs(race) + timer.peek();
     if (phase === 'countdown' && inRoom) {
       const next = Math.max(0, Math.ceil((inRoom.startAt - Date.now()) / 1000));
       if (next !== left && next > 0 && next <= 3) announce = String(next);
@@ -394,8 +442,13 @@
     <li>Every link to another article works, including the ones in the navigation boxes at the bottom.</li>
     <li>No going back. Once you leave an article, the only way back to it is a link on a later page.</li>
     <li>No Find. Read and scroll.</li>
-    <li>Every click counts, so choose carefully. The clock only runs while an article is on screen; loading time doesn't count.</li>
-    <li>Fewest clicks wins. Time only breaks ties.</li>
+    {#if timed}
+      <li>The clock runs in real time from the start, loading included.</li>
+      <li>First to the finish wins.</li>
+    {:else}
+      <li>Every click counts, so choose carefully. The clock only runs while an article is on screen; loading time doesn't count.</li>
+      <li>Fewest clicks wins. Time only breaks ties.</li>
+    {/if}
   </ol>
 {/snippet}
 
@@ -495,6 +548,7 @@
       {seconds}
       voice="race"
       finished={race.status === 'finished'}
+      {stopped}
       bind:takeover
       extra={resultExtra}
       others={room?.others ?? []}
@@ -580,6 +634,16 @@
   <div class="sheet-actions">
     <button class="pill primary" type="button" onclick={leaveRoom}>Leave room</button>
     <button class="pill secondary" type="button" onclick={() => (leaveOpen = false)}>Keep racing</button>
+  </div>
+</Sheet>
+
+<Sheet bind:open={winnerOpen} title="{room?.winner?.name ?? 'Someone'} won">
+  {#if room?.winner}
+    <p class="sheet-text">{room.winner.name} reached {displayTitle(to)} first, in {clock(room.winner.timeMs / 1000)}. Keep racing for a place, or stop and see the results.</p>
+  {/if}
+  <div class="sheet-actions">
+    <button class="pill primary" type="button" onclick={() => (winnerOpen = false)}>Keep racing</button>
+    <button class="pill secondary" type="button" onclick={seeResults}>See the results</button>
   </div>
 </Sheet>
 

@@ -17,6 +17,7 @@ import {
   nextAlarm,
   phaseAt,
   setCourse,
+  setScoring,
   standings,
   start,
   stateOf,
@@ -211,6 +212,9 @@ export class Course extends DurableObject<Env> {
     switch (msg.t) {
       case 'course':
         out = setCourse(room, n, msg.from, msg.to, now);
+        break;
+      case 'scoring':
+        out = setScoring(room, n, msg.scoring, now);
         break;
       case 'start':
         out = start(room, n, now);

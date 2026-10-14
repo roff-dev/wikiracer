@@ -3,7 +3,7 @@
 // Live phases: lobby → countdown → race → standings, then back to the lobby for the next course.
 // Countdown and race are one stored stage ('round'); which one it is follows from startAt.
 import { checkName, uniqueName } from './names.ts';
-import type { ErrorCode, Mode, Phase, PlayerState, PlayerStatus, RoomState, StandingRow } from './protocol.ts';
+import type { ErrorCode, Mode, Phase, PlayerState, PlayerStatus, RoomState, Scoring, StandingRow } from './protocol.ts';
 
 export const MAX_SEATS = 4;
 export const COUNTDOWN_MS = 5000;
@@ -43,6 +43,8 @@ export interface Room {
   round: number;
   stage: 'lobby' | 'round' | 'standings';
   startAt: number | null;
+  // how a round is won; rooms stored before this existed score by clicks
+  scoring?: Scoring;
   // seat number of the host
   host: number;
   // the creator's seat hash: their seat becomes host when they join, even if a friend got in first
@@ -79,8 +81,10 @@ export function validFinish(course: { from: string; to: string }, f: { clicks: u
 }
 
 export function createRoom(mode: Mode, from: string, to: string, now: number, owner: string | null = null): Room {
-  return { mode, from, to, created: now, lastActivity: now, round: 0, stage: 'lobby', startAt: null, host: 0, owner, seats: [], runs: {} };
+  return { mode, from, to, created: now, lastActivity: now, round: 0, stage: 'lobby', startAt: null, scoring: 'clicks', host: 0, owner, seats: [], runs: {} };
 }
+
+export const scoringOf = (r: Room): Scoring => r.scoring ?? 'clicks';
 
 export function phaseAt(room: Room, now: number): Phase {
   if (room.stage === 'round') return now < room.startAt! ? 'countdown' : 'race';
@@ -173,6 +177,16 @@ export function setCourse(room: Room, n: number, from: unknown, to: unknown, now
   return { ok: true, room: r };
 }
 
+// The host picks how rounds are won, between rounds; the standings stay up
+export function setScoring(room: Room, n: number, scoring: unknown, now: number): Outcome {
+  const r = touch(room, now);
+  if (r.host !== n) return fail('bad');
+  if (r.stage === 'round') return fail('started');
+  if (scoring !== 'clicks' && scoring !== 'time') return fail('bad');
+  r.scoring = scoring;
+  return { ok: true, room: r };
+}
+
 // The host starts from the lobby with at least 2 players connected; everyone connected races
 export function start(room: Room, n: number, now: number): Outcome {
   const r = touch(room, now);
@@ -209,7 +223,8 @@ export function finish(room: Room, n: number, f: { clicks: unknown; timeMs: unkn
   if (!run || !validFinish(r, f, ROUND_MS) || (f.clicks as number) < run.clicks) return fail('bad');
   run.status = 'finished';
   run.clicks = f.clicks as number;
-  run.timeMs = f.timeMs as number;
+  // a timed round counts real time from the start, loading included, on the room's clock
+  run.timeMs = scoringOf(r) === 'time' ? Math.max(0, now - r.startAt!) : (f.timeMs as number);
   run.route = f.route as string[];
   return { ok: true, room: settle(r) };
 }
@@ -289,27 +304,31 @@ export function stateOf(room: Room, now: number): RoomState {
     from: room.from,
     to: room.to,
     ...(room.stage === 'round' ? { startAt: room.startAt! } : {}),
+    scoring: scoringOf(room),
     host: hostAt(room, now),
     players,
   };
 }
 
-// Standings and challenge tables: finished first, then fewest clicks, then the lower time; equal
-// clicks and time share a place.
+// Standings and challenge tables: finished first, then fewest clicks, then the lower time (a timed
+// room's finishers: the lower time, then fewest clicks); equal clicks and time share a place.
 interface Rankable {
   status: string;
   clicks: number;
   timeMs: number | null;
 }
 
-function better(a: Rankable, b: Rankable): number {
+const comparer = (scoring: Scoring) => (a: Rankable, b: Rankable): number => {
   const fa = a.status === 'finished' ? 0 : 1, fb = b.status === 'finished' ? 0 : 1;
   if (fa !== fb) return fa - fb;
+  const time = (a.timeMs ?? Infinity) - (b.timeMs ?? Infinity);
+  if (scoring === 'time' && fa === 0 && time !== 0) return time;
   if (a.clicks !== b.clicks) return a.clicks - b.clicks;
-  return (a.timeMs ?? Infinity) - (b.timeMs ?? Infinity);
-}
+  return time || 0;
+};
 
-export function rank<T extends Rankable>(rows: T[]): (T & { place: number })[] {
+export function rank<T extends Rankable>(rows: T[], scoring: Scoring = 'clicks'): (T & { place: number })[] {
+  const better = comparer(scoring);
   const sorted = [...rows].sort(better);
   return sorted.map((row) => ({ ...row, place: 1 + sorted.filter((o) => better(o, row) < 0).length }));
 }
@@ -322,7 +341,7 @@ export function standings(room: Room, routeOf: (n: number) => string[] = () => [
       const run = room.runs[s.n]!;
       return { n: s.n, name: s.name, status: run.status as PlayerStatus, clicks: run.clicks, timeMs: run.status === 'finished' ? run.timeMs : null, route: run.status === 'finished' ? run.route : routeOf(s.n) };
     });
-  return rank(rows);
+  return rank(rows, scoringOf(room));
 }
 
 // Challenges: up to 4 results, one per seat token, the first one kept

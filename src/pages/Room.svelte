@@ -12,7 +12,7 @@
   import CopyButton from '../components/CopyButton.svelte';
   import Sheet from '../components/Sheet.svelte';
   import { normaliseCode, showCode } from '../../worker/names';
-  import type { ErrorCode, PlayerState, RoomState, StandingRow } from '../../worker/protocol';
+  import type { ErrorCode, PlayerState, RoomState, Scoring, StandingRow } from '../../worker/protocol';
   import { surprise, type Difficulty } from '../data/pools';
   import { clock, plural } from '../data/share';
   import { REVEAL } from '../map/renderer';
@@ -57,6 +57,17 @@
   const connected = $derived(players.filter((p) => p.status !== 'away').length);
   const inRound = $derived(!!room && (room.phase === 'countdown' || room.phase === 'race'));
   const racingHere = $derived(!!room && !!me && me.status !== 'watching' && (inRound || (room.phase === 'standings' && shownRound === room.round)));
+  const SCORINGS: { value: Scoring; name: string; desc: string }[] = [
+    { value: 'clicks', name: 'Shortest route', desc: 'Fewest clicks wins. Time only breaks ties.' },
+    { value: 'time', name: 'Timed', desc: 'First to the finish wins. The clock runs in real time, loading included.' },
+  ];
+  const scoring = $derived<Scoring>(room?.scoring ?? 'clicks');
+  // a timed round's first finisher (the room's clock), once someone other than you is home
+  const winner = $derived.by(() => {
+    if (scoring !== 'time') return null;
+    const done = players.filter((p) => p.status === 'finished' && p.timeMs !== undefined).sort((a, b) => a.timeMs! - b.timeMs!);
+    return done[0] && done[0].n !== you ? { name: done[0].name, timeMs: done[0].timeMs! } : null;
+  });
   const stillRacing = $derived(players.filter((p) => p.n !== you && (p.status === 'racing' || p.status === 'away') && inRound));
   const rows = $derived<ResultRow[]>(
     results
@@ -208,6 +219,9 @@
           to: room.to,
           key: `${code}.${room.round}`,
           startAt: socket.local(startAt),
+          scoring,
+          winner,
+          myTimeMs: me?.timeMs ?? null,
           session,
           onmove: (clicks, title) => socket?.send({ t: 'move', click: clicks, title }),
           onfinish: (clicks, timeMs, route) => socket?.send({ t: 'finish', clicks, timeMs, route }),
@@ -353,6 +367,23 @@
             {/each}
           </ol>
           {#if inRound}<p class="quiet">A race is under way. You'll be in the next one.</p>{/if}
+          {#if room.phase === 'lobby'}
+            {#if isHost}
+              <fieldset class="scorings">
+                <legend class="label">How to win</legend>
+                {#each SCORINGS as s (s.value)}
+                  <label class="scoring" class:on={scoring === s.value}>
+                    <input type="radio" name="scoring" value={s.value} checked={scoring === s.value} onchange={() => socket?.send({ t: 'scoring', scoring: s.value })} />
+                    <span class="scoring-name">{s.name}</span>
+                    <span class="scoring-desc">{s.desc}</span>
+                  </label>
+                {/each}
+              </fieldset>
+            {:else}
+              {@const s = SCORINGS.find((x) => x.value === scoring)!}
+              <p class="scoring-line"><strong>{s.name}.</strong> {s.desc}</p>
+            {/if}
+          {/if}
         </section>
         {#if room.phase === 'lobby'}
           <div class="actions host">
@@ -418,6 +449,56 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
+  }
+  /* the same choice cards as the friends sheet's live room / challenge link */
+  .scorings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+    max-width: 640px;
+    margin: 24px 0 0;
+    padding: 0;
+    border: 0;
+  }
+  .scorings legend {
+    margin-bottom: 8px;
+    padding: 0;
+  }
+  .scoring {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    padding: 12px 14px 12px 44px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  .scoring.on {
+    border-color: var(--signal);
+    box-shadow: inset 0 0 0 1px var(--signal);
+  }
+  .scoring input {
+    position: absolute;
+    left: 14px;
+    top: 15px;
+    margin: 0;
+    accent-color: var(--signal);
+  }
+  .scoring-name {
+    font-weight: 650;
+  }
+  .scoring-desc {
+    color: var(--ink-2);
+    font-size: var(--size-13);
+  }
+  .scoring-line {
+    margin: 20px 0 0;
+    color: var(--ink-2);
+  }
+  .scoring-line strong {
+    color: var(--ink);
+    font-weight: 650;
   }
   .invite {
     display: grid;
