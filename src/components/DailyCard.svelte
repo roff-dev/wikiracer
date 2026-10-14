@@ -24,24 +24,29 @@
   const href = (day: DailyDay) => `/race/?${new URLSearchParams({ from: day.start, to: day.finish, daily: day.date })}`;
 </script>
 
+<!-- two groups, so a page can place the headline and the call to action apart (home on desktop) -->
 {#await load}
-  <div class="loading" aria-hidden="true"></div>
+  <div class="head loading" aria-hidden="true"></div>
 {:then c}
   {#if c}
-    <p class="meta">Today, #{c.number}, {label[c.day.label]}</p>
-    <CourseHero from={c.day.start} to={c.day.finish} />
-    <p class="rules">Get from one to the other by tapping links. Fewest clicks wins.</p>
-    {@render actions({ day: c.day, href: href(c.day) })}
-    {#if c.run || c.streak > 1 || c.best}
-      <dl class="record">
-        {#if c.run}<div><dt>Today</dt><dd>{plural(c.run.clicks, 'click')} in {clock(c.run.seconds)}</dd></div>{/if}
-        {#if c.streak > 1}<div><dt>Streak</dt><dd>{plural(c.streak, 'day')}</dd></div>{/if}
-        {#if c.best}<div><dt>Best</dt><dd>{scoreWords(c.best.clicks, c.best.clicks - c.best.over)}</dd></div>{/if}
-      </dl>
-    {/if}
+    <div class="head">
+      <p class="meta">Today, #{c.number}, {label[c.day.label]}</p>
+      <CourseHero from={c.day.start} to={c.day.finish} />
+    </div>
+    <div class="cta">
+      <p class="rules">Get from one to the other by tapping links. Fewest clicks wins.</p>
+      {@render actions({ day: c.day, href: href(c.day) })}
+      {#if c.run || c.streak > 1 || c.best}
+        <dl class="record">
+          {#if c.run}<div><dt>Today</dt><dd>{plural(c.run.clicks, 'click')} in {clock(c.run.seconds)}</dd></div>{/if}
+          {#if c.streak > 1}<div><dt>Streak</dt><dd>{plural(c.streak, 'day')}</dd></div>{/if}
+          {#if c.best}<div><dt>Best</dt><dd>{scoreWords(c.best.clicks, c.best.clicks - c.best.over)}</dd></div>{/if}
+        </dl>
+      {/if}
+    </div>
   {:else}
-    <h1 class="missing">Today's course isn't ready yet.</h1>
-    <p class="rules">Pick a difficulty under Surprise me, or one of the classic courses, and race that instead.</p>
+    <div class="head"><h1 class="missing">Today's course isn't ready yet.</h1></div>
+    <div class="cta"><p class="rules">Pick a difficulty under Surprise me, or one of the classic courses, and race that instead.</p></div>
   {/if}
 {/await}
 

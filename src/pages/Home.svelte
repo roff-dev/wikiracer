@@ -227,12 +227,36 @@
   @media (min-width: 900px) {
     .home {
       grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-      grid-template-areas: 'today show' 'surprise surprise' 'set set' 'join join' 'classic classic';
+      grid-template-areas: 'today show' 'cta cta' 'surprise surprise' 'set set' 'join join' 'classic classic';
       column-gap: 48px;
       padding-top: 32px;
     }
+    /* the card's two groups become grid items: the headline beside the demo, and the rules with
+       both actions in one row under them */
     .today {
+      display: contents;
+    }
+    .today :global(.head) {
       grid-area: today;
+    }
+    .today :global(.cta) {
+      grid-area: cta;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px 32px;
+      margin: 40px 0 56px;
+      padding-left: 34px;
+    }
+    .today :global(.cta .rules) {
+      max-width: none;
+      margin: 0;
+      padding-left: 0;
+    }
+    .today :global(.cta .record) {
+      flex-basis: 100%;
+      margin: 0;
+      padding-left: 0;
     }
     .show {
       grid-area: show;
@@ -256,7 +280,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      padding-left: 34px;
+      margin-top: 0;
     }
     .way {
       grid-template-columns: 220px minmax(0, 1fr);
