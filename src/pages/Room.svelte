@@ -283,7 +283,7 @@
 
 <p class="sr" aria-live="polite">{announce}</p>
 
-{#if racingHere && roomRace}
+{#if stage !== 'left' && racingHere && roomRace}
   {#key room!.round}
     <Race room={roomRace} />
   {/key}
