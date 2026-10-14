@@ -6,6 +6,7 @@
   import DailyCard from '../components/DailyCard.svelte';
   import DemoLoop from '../components/DemoLoop.svelte';
   import Footer from '../components/Footer.svelte';
+  import GooeyLevels from '../components/GooeyLevels.svelte';
   import FriendsSheet from '../components/FriendsSheet.svelte';
   import JoinRoom from '../components/JoinRoom.svelte';
   import Setter from '../components/Setter.svelte';
@@ -61,11 +62,7 @@
     <h2 id="surprise-head">Surprise me</h2>
     <div class="body">
       <p class="hint">A random course. You only know how hard it is.</p>
-      <div class="levels" role="group" aria-labelledby="surprise-head">
-        {#each levels as [level, name] (level)}
-          <button class="pill secondary" type="button" onclick={() => surpriseMe(level)}>{name}</button>
-        {/each}
-      </div>
+      <GooeyLevels options={levels} labelledby="surprise-head" onpick={surpriseMe} />
       {#if surpriseProblem}<p class="msg" role="alert">{surpriseProblem}</p>{/if}
     </div>
   </section>
@@ -160,12 +157,6 @@
   }
   .msg {
     color: var(--ink);
-  }
-  .levels {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    max-width: 420px;
   }
   .classics {
     display: grid;
