@@ -353,22 +353,25 @@ export class MapRenderer {
   // drawn on top; 1–4 are players. Stops that aren't drawn on the map (a player's detour) sit on
   // an arc between start and finish, below or above by course number, so routes stay apart;
   // stops shared with the map, and so with the shortest route, merge.
-  setCourse(index: number, ids: number[], colour: string): void {
+  // An open course (a race given up) stops short of the finish: its last stop is placed like the
+  // others, not on the finish.
+  setCourse(index: number, ids: number[], colour: string, open = false): void {
     const n = ids.length - 1;
+    const span = open ? n + 1 : n;
     const S0 = CENTRES[0]!, F0 = CENTRES[1]!;
     const bulge = [-1.3, -1.3, 1.3, -2.2, 2.2][index % 5]!;
     const positions = ids.map((id, i): [number, number] => {
       if (i === 0) return [...S0];
-      if (i === n) return [...F0];
+      if (i === n && !open) return [...F0];
       const p = this.positionOf(id);
       if (p) return p;
-      const t = i / n;
+      const t = i / span;
       return [S0[0] + (F0[0] - S0[0]) * t, bulge * Math.sin(Math.PI * t)];
     });
     const legs: number[] = [];
     for (let i = 0; i < n; i++) legs.push(...positions[i]!, ...positions[i + 1]!, i);
     const stops: number[] = [];
-    for (let i = 1; i < n; i++) stops.push(...positions[i]!, 0, i);
+    for (let i = 1; i < (open ? n + 1 : n); i++) stops.push(...positions[i]!, 0, i);
     const old = this.courses[index];
     const c: Course = { ids, colour: hex(colour), legs: Float32Array.from(legs), stops: Float32Array.from(stops), positions, start: Infinity, duration: 900, vaoLegs: null, vaoStops: null, buffers: [] };
     if (old) for (const b of old.buffers) this.gl.deleteBuffer(b);

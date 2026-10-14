@@ -24,6 +24,9 @@ export interface SearchHandle {
 
 type Pending = { resolve(msg: FromWorker): void; reject(e: Error): void };
 
+// The search needs a module worker, gzip streams and fetch
+export const supported = () => typeof Worker !== 'undefined' && typeof DecompressionStream !== 'undefined' && typeof fetch !== 'undefined';
+
 const saveData = () => (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
 
 export class SearchClient {
@@ -109,6 +112,12 @@ export class SearchClient {
 
   async check(routes: string[][]): Promise<number[][]> {
     return (await this.request<'checkResult'>({ kind: 'check', reqId: this.nextId++, routes })).missing;
+  }
+
+  // Links leaving and reaching an article (the setter refuses a course no route can finish)
+  async degrees(id: number): Promise<{ out: number; in: number }> {
+    const r = await this.request<'degreesResult'>({ kind: 'degrees', reqId: this.nextId++, id });
+    return { out: r.out, in: r.in };
   }
 
   terminate(): void {

@@ -106,15 +106,15 @@ export class RevealDirector {
 
   // The search is done: once the fronts have landed, the breakthrough, then the shortest route
   // (stop titles in `titles`), the par, then the player's route if there is one. Player stops that
-  // aren't map articles carry null.
-  finale(dag: Dag | null, featured: number[] | null, titles: string[], player: { ids: (number | null)[]; titles: string[] } | null): void {
+  // aren't map articles carry null; an open route (given up) doesn't reach the finish.
+  finale(dag: Dag | null, featured: number[] | null, titles: string[], player: { ids: (number | null)[]; titles: string[]; open?: boolean } | null): void {
     const r = this.renderer;
     const at = Math.max(r.now(), this.lastBirth + 700);
     if (dag) r.setDag(dag);
     let fake = -1;
     const playerIds = player?.ids.map((id) => id ?? fake--) ?? null;
     if (featured) r.setCourse(0, featured, REVEAL.shortest);
-    if (playerIds) r.setCourse(1, playerIds, REVEAL.players[0]!);
+    if (playerIds) r.setCourse(1, playerIds, REVEAL.players[0]!, player?.open);
 
     const shortestMs = this.opts.reducedMotion ? 200 : 900;
     const parAt = at + 300 + shortestMs;
@@ -132,7 +132,7 @@ export class RevealDirector {
         const onRoute = new Set(featured ?? []);
         const pos = r.coursePositions(1);
         player.titles.forEach((t, i) => {
-          if (i > 0 && i < player.titles.length - 1 && !onRoute.has(playerIds[i]!)) this.pendingLabels.push(this.labelAt(t, 'yours', pos[i]!));
+          if (i > 0 && (i < player.titles.length - 1 || player.open) && !onRoute.has(playerIds[i]!)) this.pendingLabels.push(this.labelAt(t, 'yours', pos[i]!));
         });
       }
     });

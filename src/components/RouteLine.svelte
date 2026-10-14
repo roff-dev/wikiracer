@@ -1,7 +1,8 @@
 <script lang="ts">
   // A route as a transit line: the start dot, a stop per
   // article, the finish marker. `checks` holds, per hop, whether today's Wikipedia still has the
-  // link (null: not checked); `missing` marks hops my map doesn't have.
+  // link (null: not checked); `missing` marks hops my map doesn't have. An `open` route stops
+  // short of the finish (a race given up), so its last stop is a plain one.
   import { displayTitle } from '../data/share';
   import { mapDateText } from '../site';
 
@@ -10,19 +11,21 @@
     checks = null,
     missing = [],
     onAnother = null,
+    open = false,
   }: {
     titles: string[];
     checks?: (boolean | null)[] | null;
     missing?: number[];
     onAnother?: (() => void) | null;
+    open?: boolean;
   } = $props();
 </script>
 
 <ol class="line">
   {#each titles as t, i (i)}
-    <li class:start={i === 0} class:finish={i === titles.length - 1}>
+    <li class:start={i === 0} class:finish={i === titles.length - 1 && !open} class:last={i === titles.length - 1}>
       <svg class="mark" viewBox="0 0 20 20" aria-hidden="true">
-        {#if i === titles.length - 1}<circle cx="10" cy="10" r="7.5" /><circle class="core" cx="10" cy="10" r="3.5" />{:else}<circle cx="10" cy="10" r="5.5" />{/if}
+        {#if i === titles.length - 1 && !open}<circle cx="10" cy="10" r="7.5" /><circle class="core" cx="10" cy="10" r="3.5" />{:else}<circle cx="10" cy="10" r="5.5" />{/if}
       </svg>
       <span class="title">{displayTitle(t)}</span>
       {#if i < titles.length - 1}
@@ -51,7 +54,7 @@
     min-height: 34px;
   }
   /* the leg to the next stop */
-  li:not(.finish)::before {
+  li:not(.last)::before {
     content: '';
     position: absolute;
     left: 8.5px;

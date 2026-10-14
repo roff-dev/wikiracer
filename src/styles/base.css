@@ -50,3 +50,54 @@ a {
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
+
+/* Buttons: full pills, 44 px tall; the primary action 52 px */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font: 600 var(--size-16) / 1 var(--font);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pill.primary {
+  min-height: 52px;
+  border: 0;
+  background: var(--signal);
+  color: var(--on-signal);
+}
+
+.pill.secondary {
+  border: 1px solid var(--line);
+  background: var(--bg-sunk);
+  color: var(--ink);
+}
+
+.pill:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* No horizontal overscroll during a race: in Chromium it would trigger back-navigation */
+html.racing,
+html.racing body {
+  overscroll-behavior-x: none;
+}
