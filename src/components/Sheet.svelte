@@ -44,7 +44,7 @@
     box-shadow: var(--shadow-sheet);
   }
   .sheet::backdrop {
-    background: rgb(7 8 15 / 0.45);
+    background: rgb(7 8 15 / 0.6);
   }
   .sheet[open] {
     animation: rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
