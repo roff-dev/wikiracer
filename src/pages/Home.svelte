@@ -289,9 +289,6 @@
     .way h2 {
       padding-top: 10px;
     }
-    .today {
-      margin-bottom: 56px;
-    }
     .set .body {
       max-width: 680px;
     }
@@ -300,6 +297,41 @@
       column-gap: 32px;
     }
     .classics li:nth-child(2) {
+      border-top: 0;
+    }
+  }
+
+  /* wide screens: the ways in follow the hero's two columns. Set a course sits under the titles,
+     the one-tap ways (Surprise me, Join a room) stack under the demo, and the classic courses
+     run as one row of four, each drawn like the hero's course */
+  @media (min-width: 1100px) {
+    .home {
+      grid-template-areas: 'today show' 'cta cta' 'set surprise' 'set join' 'classic classic';
+      grid-template-rows: auto auto auto 1fr auto;
+    }
+    .way {
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      gap: 14px;
+      padding: 32px 0;
+    }
+    .way h2 {
+      padding-top: 0;
+    }
+    .set {
+      border-top: 1px solid var(--line);
+    }
+    .join {
+      border-bottom: 1px solid var(--line);
+    }
+    .set .body {
+      max-width: none;
+    }
+    .classics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 32px;
+    }
+    .classics li + li {
       border-top: 0;
     }
   }
