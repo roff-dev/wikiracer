@@ -18,6 +18,10 @@
   let shown = $state(false);
   // set for the one frame a hidden blob is moved, so it doesn't slide over from where it last was
   let jump = $state(false);
+  // the filter is on only while there's a blob to melt (and through its shrink after leaving):
+  // over an empty layer, iOS WebKit draws a stray black square at the page's top-left
+  let melting = $state(false);
+  let settle: ReturnType<typeof setTimeout> | undefined;
 
   function place(b: HTMLElement) {
     toRight = b.offsetLeft >= left;
@@ -29,6 +33,8 @@
   function move(i: number) {
     const b = labels?.children[i] as HTMLElement | undefined;
     if (!b || !group) return;
+    clearTimeout(settle);
+    melting = true;
     // hidden (first time, or after leaving the row): jump to this button, then grow there
     if (!shown) {
       jump = true;
@@ -37,14 +43,18 @@
     } else place(b);
   }
 
-  const leave = () => (shown = false);
+  function leave() {
+    shown = false;
+    clearTimeout(settle);
+    settle = setTimeout(() => (melting = false), 400);
+  }
 </script>
 
 <div class="goo-group" class:shown class:jump class:right={toRight} role="group" aria-labelledby={labelledby} bind:this={group} onpointerleave={leave} style:--goo-l="{left}px" style:--goo-r="{right}px" style:--goo-c="{centre}px" style:--goo-c2="{centre}px">
   <div class="rest" aria-hidden="true">
     {#each options as [value] (value)}<span></span>{/each}
   </div>
-  <div class="goo" aria-hidden="true" style:filter="url(#{filterId})">
+  <div class="goo" aria-hidden="true" style:filter={melting ? `url(#${filterId})` : null}>
     <span class="drop d2"></span>
     <span class="drop d1"></span>
     <span class="body"></span>
