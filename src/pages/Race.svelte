@@ -664,7 +664,7 @@
 
   /* Start card */
   .card {
-    max-width: 760px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 40px var(--gutter) 0;
   }
@@ -1013,7 +1013,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) 280px;
       gap: 32px;
-      max-width: 1180px;
+      max-width: 1240px;
       margin: 0 auto;
       padding-right: var(--gutter);
     }
@@ -1058,7 +1058,7 @@
 
   /* Result */
   .result {
-    max-width: 1180px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 32px var(--gutter) 56px;
   }

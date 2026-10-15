@@ -86,12 +86,12 @@
 <style>
   .result,
   .page {
-    max-width: 1180px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 40px var(--gutter) 56px;
   }
   .intro {
-    max-width: 760px;
+    max-width: 800px;
   }
   .missing {
     margin: 0 0 16px;

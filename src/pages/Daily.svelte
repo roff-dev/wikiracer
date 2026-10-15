@@ -21,7 +21,7 @@
 
 <style>
   .daily {
-    max-width: 1180px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 16px var(--gutter) 72px;
   }

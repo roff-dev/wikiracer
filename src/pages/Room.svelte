@@ -421,7 +421,7 @@
   .room {
     display: grid;
     gap: 32px;
-    max-width: 1180px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 32px var(--gutter) 56px;
   }

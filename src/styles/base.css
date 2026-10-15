@@ -135,6 +135,15 @@ a {
   .hover-fill:hover:not(:disabled) {
     color: var(--on-hover);
   }
+  /* bordered pills: the fill covers the 1 px border too, drawn a few px past the button so the
+     goo's softened edge falls outside it, and clipped at the border's outer edge; no dark ring
+     is left round a filled pill */
+  .pill.primary::before,
+  .pill.secondary::before {
+    --bar: calc((100% - 26px - var(--btn-h)) * var(--fill));
+    --end: calc((var(--btn-h) + 6px) * var(--fill) / 2);
+    clip-path: inset(13px round 999px);
+  }
   .pill:hover:not(:disabled)::before,
   .hover-fill:hover:not(:disabled)::before {
     --fill: 1;

@@ -7,9 +7,50 @@
   let { from, to }: { from: string; to: string } = $props();
   const descFrom = $derived(shortDescription(from));
   const descTo = $derived(shortDescription(to));
+  // the runs of letters that each have to sit on one line (spaces and hyphens can break)
+  const words = (t: string) => displayTitle(t).split(/[\s-]+/);
+  const guess = (t: string) => Math.max(...words(t).map((w) => w.length)) * 0.7;
+
+  // Each title's widest word, measured in em in its own type (letters differ: a W is twice an
+  // i), so the size can step down until it fits rather than break mid-word. Until the font is
+  // in, a guess of 0.7 em a letter.
+  let course = $state<HTMLElement>();
+  let fromEm = $state<number>();
+  let toEm = $state<number>();
+  function measure(title: HTMLElement, list: string[]) {
+    const probe = title.cloneNode() as HTMLElement;
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:100px';
+    title.after(probe);
+    const em = Math.max(
+      ...list.map((w) => {
+        probe.textContent = w;
+        return probe.getBoundingClientRect().width / 100;
+      }),
+    );
+    probe.remove();
+    return em;
+  }
+  $effect(() => {
+    const el = course!;
+    const [a, b] = [words(from), words(to)];
+    let live = true;
+    const run = () => {
+      if (!live) return;
+      const [ta, tb] = el.querySelectorAll<HTMLElement>('.title');
+      fromEm = measure(ta!, a);
+      toEm = measure(tb!, b);
+    };
+    // the type narrows in a small column (.long), so measure again when the column changes
+    const ro = new ResizeObserver(run);
+    void document.fonts.ready.then(() => live && ro.observe(el));
+    return () => {
+      live = false;
+      ro.disconnect();
+    };
+  });
 </script>
 
-<h1 class="course">
+<h1 class="course" bind:this={course} style:--from-em={fromEm ?? guess(from)} style:--to-em={toEm ?? guess(to)}>
   <span class="stop start">
     <svg class="mark" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /></svg>
     <span class="label">Start</span>
@@ -29,31 +70,43 @@
   .course {
     position: relative;
     display: grid;
-    gap: clamp(20px, 5vw, 36px);
+    --gap: clamp(20px, 5vw, 36px);
+    gap: var(--gap);
     margin: 0;
     padding-left: 34px;
     container-type: inline-size;
     font: inherit;
   }
-  /* the hairline between the two markers */
-  .course::before {
+  .stop {
+    /* a title whose longest word is too wide for the column steps down until it fits (with a
+       hair to spare for rounding), rather than breaking mid-word */
+    --size-from: min(var(--size-display), 0.98 * 100cqi / var(--from-em, 1));
+    --size-to: min(var(--size-display), 0.98 * 100cqi / var(--to-em, 1));
+    --mid: calc(0.5 * var(--size) * 0.95);
+    position: relative;
+    display: grid;
+  }
+  .start {
+    --size: var(--size-from);
+  }
+  .finish {
+    --size: var(--size-to);
+  }
+  /* the hairline between the two markers' centres, under the finish marker */
+  .start::before {
     content: '';
     position: absolute;
-    left: 9px;
-    top: calc(0.5 * var(--size-display) * 0.95);
-    bottom: calc(0.5 * var(--size-display) * 0.95);
+    left: -25px;
+    top: var(--mid);
+    height: calc(100% - var(--mid) + var(--gap) + 0.5 * var(--size-to) * 0.95);
     width: 2px;
     border-radius: 1px;
     background: var(--line);
   }
-  .stop {
-    position: relative;
-    display: grid;
-  }
   .mark {
     position: absolute;
     left: -34px;
-    top: calc(0.5 * var(--size-display) * 0.95 - 10px);
+    top: calc(var(--mid) - 10px);
     width: 20px;
     height: 20px;
   }
@@ -77,7 +130,7 @@
     clip-path: inset(50%);
   }
   .title {
-    font-size: var(--size-display);
+    font-size: var(--size);
     font-weight: 780;
     line-height: 0.95;
     letter-spacing: -0.02em;

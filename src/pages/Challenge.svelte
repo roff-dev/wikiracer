@@ -88,7 +88,7 @@
 
 <style>
   .ch {
-    max-width: 760px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 32px var(--gutter) 56px;
     display: grid;

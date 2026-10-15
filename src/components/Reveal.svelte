@@ -41,7 +41,7 @@
     voice: 'shared' | 'race';
     // false when the player gave up
     finished?: boolean;
-    // a timed room's player who stopped once someone had won: no map, the route marked incomplete
+    // a timed room's player who stopped once someone had won: the route marked incomplete
     stopped?: boolean;
     takeover?: boolean;
     extra?: Snippet;
@@ -269,7 +269,7 @@
 <svelte:window onkeydown={onKey} />
 
 <section class="reveal" aria-labelledby="result-head">
-  {#if !stopped}<div class="stage" class:takeover class:static={staticView} onpointerup={skip} role="presentation">
+  <div class="stage" class:takeover class:static={staticView} onpointerup={skip} role="presentation">
     {#if !staticView}
       <div class="canvas-wrap" role="img" aria-label={canvasLabel}><canvas bind:this={canvas}></canvas></div>
       <div class="labels" aria-hidden="true">
@@ -292,7 +292,7 @@
     {#if staticView && (status.kind === 'searching' || status.kind === 'loading')}
       <p class="static-count">Explored {plural(explored, 'article')}</p>
     {/if}
-  </div>{/if}
+  </div>
 
   <div class="panel" class:hidden={!showText}>
     <p class="sr" aria-live="polite">{settled ? announce : ''}</p>

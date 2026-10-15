@@ -14,7 +14,7 @@
 
 <style>
   .footer {
-    max-width: 1180px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 24px var(--gutter) calc(32px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
