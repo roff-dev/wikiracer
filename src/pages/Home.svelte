@@ -231,8 +231,9 @@
       column-gap: 48px;
       padding-top: 32px;
     }
-    /* the card's two groups become grid items: the headline beside the demo, and the rules with
-       both actions in one row under them */
+    /* the card's two groups become grid items: the headline beside the demo, and under them the
+       rules under the headline and both actions under the demo, on the page's own two columns so
+       the buttons start at the demo's left edge */
     .today {
       display: contents;
     }
@@ -241,10 +242,10 @@
     }
     .today :global(.cta) {
       grid-area: cta;
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
       align-items: center;
-      gap: 16px 32px;
+      gap: 16px 48px;
       margin: 40px 0 56px;
     }
     .today :global(.cta .rules) {
@@ -252,7 +253,7 @@
       margin: 0;
     }
     .today :global(.cta .record) {
-      flex-basis: 100%;
+      grid-column: 1 / -1;
       margin: 0;
     }
     .show {
