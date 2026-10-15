@@ -2,7 +2,7 @@
   // The reveal and the result under it, for a race just run and for a shared result. It plays the
   // session's levels (buffered ones re-timed, the rest live), then the breakthrough, the shortest
   // route, the par and the player's route, and settles into the result's map and text.
-  import { flushSync, onDestroy, onMount, tick, type Snippet } from 'svelte';
+  import { flushSync, onDestroy, onMount, type Snippet } from 'svelte';
   import AllRoutes from './AllRoutes.svelte';
   import RouteLine from './RouteLine.svelte';
   import { knownPar } from '../data/courses';
@@ -67,7 +67,6 @@
   let checkFailed = $state(false);
   let playerMissing = $state<number[]>([]);
   let showAll = $state(false);
-  let allHead = $state<HTMLElement>();
   let announce = $state('');
 
   let canvas = $state<HTMLCanvasElement>();
@@ -202,14 +201,6 @@
     void check(titles);
   }
 
-  // the list opens below the map on wide screens, so it's brought into view
-  async function openAll() {
-    showAll = true;
-    await tick();
-    allHead?.focus({ preventScroll: true });
-    allHead?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
-  }
-
   function leaveTakeover() {
     if (!takeover) return;
     // focus once the result is in the DOM: inside a view transition that's after its callback, and
@@ -277,7 +268,7 @@
 
 <svelte:window onkeydown={onKey} />
 
-<section class="reveal" class:all-open={showAll} aria-labelledby="result-head">
+<section class="reveal" aria-labelledby="result-head">
   {#if !stopped}<div class="stage" class:takeover class:static={staticView} onpointerup={skip} role="presentation">
     {#if !staticView}
       <div class="canvas-wrap" role="img" aria-label={canvasLabel}><canvas bind:this={canvas}></canvas></div>
@@ -361,19 +352,16 @@
       {/if}
     </div>
 
-    {#if status.kind === 'found' && dag && session && !showAll}
-      <button class="pill secondary" type="button" onclick={openAll}>Every shortest route</button>
+    {#if status.kind === 'found' && dag && session}
+      {#if showAll}
+        <h3 class="all-head">Every shortest route</h3>
+        <AllRoutes {dag} loadTitles={(ids) => session.client.titles(ids)} />
+      {:else}
+        <button class="pill secondary" type="button" onclick={() => (showAll = true)}>Every shortest route</button>
+      {/if}
     {/if}
     <p class="fresh">My map of Wikipedia's links is from {mapDateText}.</p>
   </div>
-
-  <!-- beside the map there's half the page; below it, the whole width -->
-  {#if status.kind === 'found' && dag && session && showAll}
-    <section class="all-routes" aria-labelledby="all-head">
-      <h3 id="all-head" class="all-head" tabindex="-1" bind:this={allHead}>Every shortest route</h3>
-      <AllRoutes {dag} loadTitles={(ids) => session.client.titles(ids)} />
-    </section>
-  {/if}
 </section>
 
 <style>
@@ -566,18 +554,12 @@
     color: var(--ink-2);
     font-size: var(--size-13);
   }
-  .panel,
-  .all-routes {
+  /* a grid item: without this, a wide child widens the page instead of fitting */
+  .panel {
     min-width: 0;
   }
-  .all-routes {
-    grid-column: 1 / -1;
-  }
   .all-head {
-    margin: 0 0 8px;
-  }
-  .all-head:focus {
-    outline: none;
+    margin-top: 8px;
   }
   .fresh {
     margin: 28px 0 0;
@@ -601,10 +583,6 @@
     .stage:not(.takeover) {
       position: sticky;
       top: 24px;
-    }
-    /* every shortest route runs under both columns, so the map stops following the page */
-    .all-open .stage:not(.takeover) {
-      position: static;
     }
     .routes {
       grid-template-columns: 1fr 1fr;

@@ -2,7 +2,7 @@
   // Every shortest route, built one step at a time: the start, the stops picked so far, then the
   // next click's choices (most routes onward first, a bar for each one's share), then the finish.
   // Picking a stop narrows the next list to the articles that follow from it; tapping a picked
-  // stop goes back to that step. A line down the page on phones; across it once there's room.
+  // stop goes back to that step.
   import { tick } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { displayTitle, plural } from '../data/share';
@@ -61,7 +61,7 @@
   }
 </script>
 
-<div class="all" style:--stops={depth + 1}>
+<div class="all">
   <p class="sum" aria-live="polite">
     {#if complete}One of {plural(total, 'shortest route')}.
     {:else if picked.length}{routes(last)} left of {total.toLocaleString('en-GB')}.
@@ -128,7 +128,6 @@
 
 <style>
   .all {
-    container-type: inline-size;
     min-width: 0;
   }
   .sum {
@@ -141,7 +140,7 @@
     margin: 0;
     padding: 0;
   }
-  /* phones: a line down the page, the same as a route's */
+  /* a line down the page, the same as a route's */
   .stop {
     position: relative;
     display: grid;
@@ -282,41 +281,5 @@
     font: 600 var(--size-13) / 1 var(--font);
     text-decoration: underline;
     cursor: pointer;
-  }
-
-  /* room to spare: the same line across the page, one column per stop, the choices hanging
-     under the open one */
-  @container (min-width: 720px) {
-    .line {
-      display: grid;
-      grid-template-columns: repeat(var(--stops), minmax(140px, 1fr));
-      gap: 0 16px;
-      overflow-x: auto;
-    }
-    .stop {
-      grid-template-columns: none;
-      grid-template-rows: 20px auto;
-      align-content: start;
-      gap: 10px;
-      padding-bottom: 8px;
-    }
-    .stop::before {
-      left: 18px;
-      right: -14px;
-      top: 9px;
-      bottom: auto;
-      width: auto;
-      height: 2px;
-    }
-    .stop.open::before,
-    .stop.later::before {
-      background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px);
-    }
-    .dot {
-      margin: 3px 0;
-    }
-    .change {
-      margin: -12px 0 0;
-    }
   }
 </style>
