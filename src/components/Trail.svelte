@@ -1,11 +1,10 @@
 <script lang="ts">
   // The trail: the articles visited, joined by hairline connectors (one per click), newest at the
-  // end, with the finish pinned after them as a chip. A strip that scrolls sideways on phones; a
-  // vertical list in the desktop rail.
+  // end, with the finish pinned after them as a chip. A strip that scrolls sideways.
   import { tick } from 'svelte';
   import { displayTitle } from '../data/share';
 
-  let { route, to, vertical = false }: { route: string[]; to: string; vertical?: boolean } = $props();
+  let { route, to }: { route: string[]; to: string } = $props();
   let list = $state<HTMLOListElement>();
 
   // the newest stop stays in view
@@ -13,18 +12,16 @@
     void route.length;
     void tick().then(() => {
       if (!list) return;
-      if (vertical) list.lastElementChild?.scrollIntoView({ block: 'nearest' });
-      else list.scrollTo({ left: list.scrollWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      list.scrollTo({ left: list.scrollWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     });
   });
 </script>
 
-<nav class="trail" class:vertical aria-label="Your route so far">
+<nav class="trail" aria-label="Your route so far">
   <ol bind:this={list}>
     {#each route as t, i (i)}
       <li class:start={i === 0} class:now={i === route.length - 1}>
-        {#if i > 0 && vertical}<svg class="joint" viewBox="0 0 8 14" aria-hidden="true"><path d="M4 0v14" /></svg>
-        {:else if i > 0}<svg class="joint" viewBox="0 0 16 8" aria-hidden="true"><path d="M0 4h16" /></svg>{/if}
+        {#if i > 0}<svg class="joint" viewBox="0 0 16 8" aria-hidden="true"><path d="M0 4h16" /></svg>{/if}
         <span class="stop">{displayTitle(t)}</span>
       </li>
     {/each}
@@ -110,39 +107,5 @@
     font-size: var(--size-13);
     font-weight: 650;
     font-stretch: var(--stretch-data);
-  }
-
-  .vertical {
-    display: grid;
-    gap: 10px;
-    height: auto;
-    padding: 0;
-    background: none;
-  }
-  .vertical ol {
-    display: grid;
-    height: auto;
-    max-height: 50vh;
-    overflow: auto;
-  }
-  .vertical li {
-    display: grid;
-    scroll-snap-align: none;
-  }
-  .vertical .joint {
-    width: 8px;
-    height: 14px;
-    margin: 2px 0 2px 3px;
-  }
-  .vertical .stop {
-    max-width: none;
-    white-space: normal;
-    font-size: var(--size-16);
-  }
-  .vertical .finish {
-    justify-self: start;
-    max-width: 100%;
-    margin: 0;
-    white-space: normal;
   }
 </style>

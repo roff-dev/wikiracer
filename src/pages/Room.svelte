@@ -242,25 +242,21 @@
   });
 </script>
 
-{#snippet board(variant: 'bar' | 'rail')}
-  {#if variant === 'bar'}
-    <details class="board-bar">
-      <summary>
-        <span class="sr">Players: </span>
-        {#each players as p (p.n)}
-          <span class="entry" class:me={p.n === you}>
-            <span class="no">{p.n}</span>
-            <span class="who">{p.name}</span>
-            <span class="count">{p.clicks}</span>
-            {#if p.status === 'finished'}<svg class="done" viewBox="0 0 20 20" aria-label="finished"><circle cx="10" cy="10" r="7" /><circle class="core" cx="10" cy="10" r="3.5" /></svg>{/if}
-          </span>
-        {/each}
-      </summary>
-      {@render boardList()}
-    </details>
-  {:else}
-    <section class="board-rail" aria-label="Players">{@render boardList()}</section>
-  {/if}
+{#snippet board()}
+  <details class="board-bar">
+    <summary>
+      <span class="sr">Players: </span>
+      {#each players as p (p.n)}
+        <span class="entry" class:me={p.n === you}>
+          <span class="no">{p.n}</span>
+          <span class="who">{p.name}</span>
+          <span class="count">{p.clicks}</span>
+          {#if p.status === 'finished'}<svg class="done" viewBox="0 0 20 20" aria-label="finished"><circle cx="10" cy="10" r="7" /><circle class="core" cx="10" cy="10" r="3.5" /></svg>{/if}
+        </span>
+      {/each}
+    </summary>
+    {@render boardList()}
+  </details>
 {/snippet}
 
 {#snippet boardList()}
@@ -646,7 +642,7 @@
     transform: translateX(-50%);
   }
 
-  /* The board during a race: a 44 px bar under the trail on phones (tap for the full rows) */
+  /* The board during a race: a 44 px bar under the trail (tap for the full rows) */
   .board-bar {
     border-top: 1px solid var(--line);
     background: var(--bg-sunk);
@@ -690,6 +686,30 @@
   .entry .count {
     font-weight: 700;
   }
+  /* desktop: the board sits beside the trail in one bar, and its full rows drop down over the
+     article */
+  @media (min-width: 1100px) {
+    .board-bar {
+      position: relative;
+      flex: 0 1 auto;
+      min-width: 0;
+      margin-left: auto;
+      border-top: 0;
+      border-left: 1px solid var(--line);
+    }
+    .board-bar[open] .board {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      min-width: 300px;
+      padding: 0 var(--gutter) 8px;
+      border: 1px solid var(--line);
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      background: var(--bg);
+      box-shadow: var(--shadow-sheet);
+    }
+  }
   .done {
     width: 12px;
     height: 12px;
@@ -702,15 +722,6 @@
   .done .core {
     fill: var(--flare);
     stroke: none;
-  }
-  .board-rail {
-    font-size: var(--size-16);
-  }
-  /* the race view decides which board shows at which width */
-  @media (min-width: 1100px) {
-    .board-bar {
-      display: none;
-    }
   }
 
   .room-table {

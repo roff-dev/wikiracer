@@ -40,8 +40,14 @@
       fromEm = measure(ta!, a);
       toEm = measure(tb!, b);
     };
-    // the type narrows in a small column (.long), so measure again when the column changes
-    const ro = new ResizeObserver(run);
+    // the type narrows in a small column (.long), so measure again when the column's width
+    // changes, a frame later (the new size changes the height, which mustn't loop back here)
+    let width = -1;
+    const ro = new ResizeObserver(([e]) => {
+      if (e!.contentRect.width === width) return;
+      width = e!.contentRect.width;
+      requestAnimationFrame(run);
+    });
     void document.fonts.ready.then(() => live && ro.observe(el));
     return () => {
       live = false;

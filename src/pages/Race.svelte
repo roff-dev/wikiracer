@@ -22,7 +22,7 @@
     onfinish(clicks: number, timeMs: number, route: string[]): void;
     ongiveup(clicks: number): void;
     onleave(): void;
-    board: Snippet<['bar' | 'rail']>;
+    board: Snippet;
     // the room's table, above the splits in the result
     table: Snippet;
     // other players' routes, drawn on the result's map once the round ends
@@ -489,7 +489,7 @@
   <FriendsSheet bind:open={friendsOpen} {from} {to} />
 {:else if phase === 'countdown'}
   <div class="race">
-    <div class="strip">{@render inRoom?.board('bar')}</div>
+    <div class="strip">{@render inRoom?.board()}</div>
     <main class="countdown" id="main">
       <p class="cd-label">Start</p>
       <h1 class="cd-title">{displayTitle(from)}</h1>
@@ -508,20 +508,11 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>
       </button>
     </header>
-    <div class="strip"><Trail route={race.route} {to} />{@render inRoom?.board('bar')}</div>
+    <div class="strip"><Trail route={race.route} {to} />{@render inRoom?.board()}</div>
     <div class="layout">
       <main id="article" tabindex="-1" bind:this={view}>
         <Article {article} {pending} onmove={follow} onpress={press} note={loadError ? errorNote : deadEnd ? deadEndNote : undefined} />
       </main>
-      <aside class="rail" aria-label="Race">
-        {@render inRoom?.board('rail')}
-        <div class="rail-finish">
-          <span class="rail-label">Finish</span>
-          <span class="rail-title">{displayTitle(to)}</span>
-        </div>
-        <p class="rail-stats">{@render hudStats()}</p>
-        <Trail route={race.route} {to} vertical />
-      </aside>
     </div>
   </div>
   <div id="race-menu" class="menu" popover="auto" bind:this={menu}>
@@ -931,9 +922,6 @@
     gap: 6px;
     min-height: 44px;
   }
-  .rail {
-    display: none;
-  }
   .note {
     margin: 0 0 28px;
     padding: 16px;
@@ -1000,59 +988,23 @@
       top: 120px;
     }
   }
-  /* desktop rails: the finish, the stats and the trail move to the right */
+  /* desktop: the stats stay in the header and the trail and the board in the strip under it, so
+     the article runs the page's full width, centred */
   @media (min-width: 1100px) {
-    .strip,
-    .hud :is(.finish-chip, .stat) {
-      display: none;
+    /* one bar: the trail, then a room's board at the right */
+    .strip {
+      display: flex;
+      background: var(--bg-sunk);
     }
-    .hud .menu-btn {
-      margin-left: auto;
+    .strip :global(.trail) {
+      flex: 1 1 auto;
     }
     .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 280px;
-      gap: 32px;
       max-width: 1240px;
       margin: 0 auto;
-      padding-right: var(--gutter);
     }
-    .rail {
-      position: sticky;
-      top: 88px;
-      display: grid;
-      align-content: start;
-      gap: 20px;
-      padding-top: 24px;
-    }
-    .rail-finish {
-      display: grid;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1.5px solid var(--flare);
-    }
-    .rail-label {
-      color: var(--flare);
-      font-size: var(--size-13);
-      font-weight: 650;
-    }
-    .rail-title {
-      font-size: var(--size-20);
-      font-weight: 700;
-      font-stretch: var(--stretch-heading);
-      line-height: 1.2;
-    }
-    .rail-stats {
-      display: flex;
-      align-items: baseline;
-      gap: 16px;
-      margin: 0;
-    }
-    .rail-stats :global(.finish-chip) {
-      display: none;
-    }
-    .toast {
-      top: 72px;
+    .layout :global(.view) {
+      max-width: none;
     }
   }
 
