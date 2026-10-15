@@ -248,7 +248,6 @@
       <span class="sr">Players: </span>
       {#each players as p (p.n)}
         <span class="entry" class:me={p.n === you}>
-          <span class="no">{p.n}</span>
           <span class="who">{p.name}</span>
           <span class="count">{p.clicks}</span>
           {#if p.status === 'finished'}<svg class="done" viewBox="0 0 20 20" aria-label="finished"><circle cx="10" cy="10" r="7" /><circle class="core" cx="10" cy="10" r="3.5" /></svg>{/if}
@@ -263,7 +262,6 @@
   <ol class="board" role="list">
     {#each players as p (p.n)}
       <li class:me={p.n === you}>
-        <span class="no">{p.n}</span>
         <span class="who">{p.name}{p.n === you ? ' (you)' : ''}</span>
         <span class="count">{plural(p.clicks, 'click')}</span>
         <span class="st">{statusWord(p)}</span>
@@ -562,11 +560,11 @@
     color: var(--ink-2);
   }
   .board li {
-    grid-template-columns: 1.6em 1fr auto;
+    grid-template-columns: 1fr auto;
     padding: 8px 0;
   }
   .board .st {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
     font-size: var(--size-13);
   }
   .seats li.me,
