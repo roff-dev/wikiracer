@@ -4,7 +4,9 @@
   box-sizing: border-box;
 }
 
+/* the page colour sits on html, not body, so the moving background (.backdrop) can sit between */
 html {
+  background: var(--bg);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   touch-action: manipulation;
@@ -13,7 +15,6 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
-  background: var(--bg);
   color: var(--ink);
   font: 450 var(--size-16) / 1.5 var(--font);
   font-stretch: var(--stretch-ui);
@@ -181,4 +182,21 @@ a {
 html.racing,
 html.racing body {
   overscroll-behavior-x: none;
+}
+
+/* The moving background (src/backdrop.ts): behind everything, never in the way */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: blur(0.6px);
+}
+
+@media print {
+  .backdrop {
+    display: none;
+  }
 }
