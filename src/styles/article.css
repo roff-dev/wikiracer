@@ -186,9 +186,9 @@
   max-width: 100% !important;
 }
 
-/* An infobox whose content can't shrink to a phone scrolls inside its own panel */
+/* A panel whose content can't shrink to a phone scrolls inside itself */
 @media (max-width: 899px) {
-  .article .infobox {
+  .article :is(.infobox, .sidebar, .vertical-navbox) {
     display: block;
     overflow-x: auto;
   }

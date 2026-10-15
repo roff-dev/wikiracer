@@ -93,9 +93,10 @@ export function rewriteArticle(doc: Document, pageTitle?: string): Rewritten {
     }
   }
 
-  // Wide tables scroll inside their own box, never the page
+  // Wide tables scroll inside their own box, never the page. Not the floated panels: a scroll box
+  // around one holds the float, so the text could only start below it on desktop
   for (const table of body.querySelectorAll('table')) {
-    if (table.closest('.navbox, .infobox') || table.parentElement?.closest('table') || table.classList.contains('infobox')) continue;
+    if (table.closest('.navbox, .infobox, .sidebar, .vertical-navbox') || table.parentElement?.closest('table')) continue;
     const wrap = doc.createElement('div');
     wrap.className = 'table-scroll';
     table.replaceWith(wrap);
