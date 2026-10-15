@@ -62,3 +62,15 @@ export function routeAvoiding(dag: Dag, from: number, to: number, avoid: [number
   };
   return walk(start);
 }
+
+// For building one route a step at a time: each node's next steps (most routes onward first,
+// then by id) and how many shortest routes run from it to the finish
+export function stepper(dag: Dag): { next: number[][]; onward: Float64Array } {
+  const { succ } = adjacency(dag);
+  const onward = new Float64Array(dag.ids.length);
+  const order = [...dag.ids.keys()].sort((a, b) => dag.pos[b]! - dag.pos[a]!);
+  const depth = Math.max(0, ...dag.pos);
+  for (const i of order) onward[i] = dag.pos[i] === depth ? 1 : succ[i]!.reduce((s, j) => s + onward[j]!, 0);
+  for (const list of succ) list.sort((a, b) => onward[b]! - onward[a]! || dag.ids[a]! - dag.ids[b]!);
+  return { next: succ, onward };
+}

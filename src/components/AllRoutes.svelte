@@ -1,26 +1,41 @@
 <script lang="ts">
-  // Every shortest route: the DAG as columns by distance, every article a chip.
-  // Tapping a stop in between filters to the routes through it. Titles load 24 per column at
-  // first, more as a column's end scrolls into view.
+  // Every shortest route, built one step at a time: the start, the stops picked so far, then the
+  // next click's choices (most routes onward first, a bar for each one's share), then the finish.
+  // Picking a stop narrows the next list to the articles that follow from it; tapping a picked
+  // stop goes back to that step. A line down the page on phones; across it once there's room.
+  import { tick } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { displayTitle, plural } from '../data/share';
-  import { columns, throughNode } from '../search/dag';
+  import { stepper } from '../search/dag';
   import type { Dag } from '../search/protocol';
 
   let { dag, loadTitles }: { dag: Dag; loadTitles: (ids: number[]) => Promise<string[]> } = $props();
 
-  const CAP = 200;
-  const STEP = 24;
-  const cols = $derived(columns(dag));
+  const FIRST = 5;
+  const STEP = 20;
+  const steps = $derived(stepper(dag));
+  const depth = $derived(Math.max(0, ...dag.pos));
+  const start = $derived(dag.pos.indexOf(0));
+  const finish = $derived(dag.pos.indexOf(depth));
   const titles = new SvelteMap<number, string>();
-  let shown = $state<number[]>([]);
-  let via = $state<number | null>(null);
+  let picked = $state<number[]>([]);
+  let shown = $state(FIRST);
   let failed = $state(false);
-  const filter = $derived(via === null ? null : throughNode(dag, via));
-  const last = $derived(cols.length - 1);
+  let pickerHead = $state<HTMLElement>();
 
-  async function load(col: number, upTo: number) {
-    const want = cols[col]!.nodes.slice(0, Math.min(upTo, CAP)).filter((i) => !titles.has(i));
+  const last = $derived(picked.length ? picked.at(-1)! : start);
+  const complete = $derived(picked.length === depth - 1);
+  const options = $derived(complete ? [] : steps.next[last]!);
+  const visible = $derived(options.slice(0, shown));
+  const most = $derived(options.length ? steps.onward[options[0]!]! : 0);
+  // a bar only says something when the choices differ
+  const bars = $derived(options.length > 1 && most !== steps.onward[options.at(-1)!]);
+  const total = $derived(dag.through[start]!);
+  const name = (n: number) => displayTitle(titles.get(n) ?? '…');
+  const routes = (n: number) => plural(steps.onward[n]!, 'route');
+
+  async function load(nodes: number[]) {
+    const want = nodes.filter((i) => !titles.has(i));
     if (!want.length) return;
     try {
       const got = await loadTitles(want.map((i) => dag.ids[i]!));
@@ -30,133 +45,233 @@
     }
   }
 
-  $effect(() => {
-    shown = cols.map(() => STEP);
-    cols.forEach((_, c) => void load(c, STEP));
-  });
+  $effect(() => void load([start, finish, ...picked, ...visible]));
 
-  function more(node: HTMLElement, col: number) {
-    const io = new IntersectionObserver((es) => {
-      if (es.some((e) => e.isIntersecting) && shown[col]! < Math.min(CAP, cols[col]!.nodes.length)) {
-        shown[col] = shown[col]! + STEP;
-        void load(col, shown[col]!);
-      }
-    });
-    io.observe(node);
-    return { destroy: () => io.disconnect() };
+  async function pick(n: number) {
+    picked = [...picked, n];
+    shown = FIRST;
+    await tick();
+    pickerHead?.focus();
   }
 
-  const visible = (col: number) => {
-    const nodes = cols[col]!.nodes;
-    return (filter ? nodes.filter((n) => filter.has(n)) : nodes).slice(0, filter ? CAP : shown[col]);
-  };
-  const total = (col: number) => (filter ? cols[col]!.nodes.filter((n) => filter.has(n)).length : cols[col]!.nodes.length);
+  // back to the step where this stop was picked
+  function change(i: number) {
+    picked = picked.slice(0, i);
+    shown = FIRST;
+  }
 </script>
 
-<div class="all">
-  {#if via !== null}
-    <p class="filter" aria-live="polite">
-      {plural(dag.through[via]!, 'shortest route')} through {displayTitle(titles.get(via) ?? '…')}.
-      <button type="button" class="text" onclick={() => (via = null)}>Show every route</button>
-    </p>
-  {/if}
-  {#if failed}<p class="filter">Some titles couldn't load. Check your connection.</p>{/if}
-  <div class="cols">
-    {#each cols as _, c (c)}
-      <section class="col" aria-label={c === 0 ? 'Start' : c === last ? 'Finish' : `After ${plural(c, 'click')}`}>
-        <h3>{c === 0 ? 'Start' : c === last ? 'Finish' : `Click ${c}`}</h3>
-        <ul>
-          {#each visible(c) as n (n)}
-            <li>
-              {#if c === 0 || c === last}
-                <span class="chip end" class:finish={c === last}>{displayTitle(titles.get(n) ?? '…')}</span>
-              {:else}
-                <button type="button" class="chip" aria-pressed={via === n} onclick={() => (via = via === n ? null : n)}>
-                  {displayTitle(titles.get(n) ?? '…')}<span class="count">{dag.through[n]!.toLocaleString('en-GB')}</span>
-                </button>
-              {/if}
-            </li>
-          {/each}
-          {#if !filter && shown[c]! < Math.min(CAP, total(c))}<li class="sentinel" use:more={c}></li>{/if}
-        </ul>
-        {#if total(c) > CAP && (filter || shown[c]! >= CAP)}
-          <p class="more">and {(total(c) - CAP).toLocaleString('en-GB')} more</p>
-        {/if}
-      </section>
+<div class="all" style:--stops={depth + 1}>
+  <p class="sum" aria-live="polite">
+    {#if complete}One of {plural(total, 'shortest route')}.
+    {:else if picked.length}{routes(last)} left of {total.toLocaleString('en-GB')}.
+    {:else}{plural(total, 'shortest route')}. Pick a first click.{/if}
+  </p>
+  {#if failed}<p class="sum">Some titles couldn't load. Check your connection.</p>{/if}
+  <ol class="line">
+    <li class="stop done">
+      <span class="dot start" aria-hidden="true"></span>
+      <div class="body">
+        <span class="label">Start</span>
+        <span class="title">{name(start)}</span>
+      </div>
+    </li>
+    {#each picked as n, i (n)}
+      <li class="stop done">
+        <span class="dot" aria-hidden="true"></span>
+        <div class="body">
+          <span class="label">Click {i + 1}</span>
+          <button class="title change" type="button" onclick={() => change(i)} aria-label="{name(n)}, click {i + 1}. Change it">{name(n)}</button>
+        </div>
+      </li>
     {/each}
-  </div>
+    {#if !complete}
+      <li class="stop open">
+        <span class="dot ask" aria-hidden="true"></span>
+        <div class="body">
+          <h4 class="label" tabindex="-1" bind:this={pickerHead}>Click {picked.length + 1}: {plural(options.length, 'choice')}</h4>
+          <ul class="choices">
+            {#each visible as n (n)}
+              <li>
+                <button class="choice" type="button" onclick={() => pick(n)} aria-label="{name(n)}, {routes(n)}">
+                  {#if bars}<span class="bar" style:width="{Math.max(4, (steps.onward[n]! / most) * 100)}%"></span>{/if}
+                  <span class="name">{name(n)}</span>
+                  <span class="count">{routes(n)}</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+          {#if options.length > shown}
+            <button class="text" type="button" onclick={() => (shown += STEP)}>Show {Math.min(STEP, options.length - shown)} more of {options.length - shown}</button>
+          {/if}
+        </div>
+      </li>
+      {#each { length: depth - 2 - picked.length } as _, k (k)}
+        <li class="stop later" aria-hidden="true">
+          <span class="dot ask"></span>
+          <div class="body"><span class="label">Click {picked.length + 2 + k}</span></div>
+        </li>
+      {/each}
+    {/if}
+    <li class="stop">
+      <span class="dot finish" aria-hidden="true"></span>
+      <div class="body">
+        <span class="label">Finish</span>
+        <span class="title">{name(finish)}</span>
+      </div>
+    </li>
+  </ol>
+  {#if picked.length}
+    <button class="text" type="button" onclick={() => change(0)}>Start over</button>
+  {/if}
 </div>
 
 <style>
-  .cols {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(180px, 1fr);
-    gap: 16px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    scroll-snap-type: x proximity;
-  }
-  .col {
-    scroll-snap-align: start;
+  .all {
+    container-type: inline-size;
     min-width: 0;
   }
-  h3 {
-    margin: 0 0 8px;
-    font-size: var(--size-13);
-    font-weight: 600;
+  .sum {
+    margin: 0 0 16px;
     color: var(--ink-2);
+    font-size: var(--size-13);
   }
-  ul {
+  .line {
     list-style: none;
     margin: 0;
     padding: 0;
+  }
+  /* phones: a line down the page, the same as a route's */
+  .stop {
+    position: relative;
     display: grid;
-    gap: 6px;
-    max-height: 420px;
-    overflow-y: auto;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 12px;
+    padding-bottom: 16px;
   }
-  .chip {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    min-height: 44px;
-    padding: 10px 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
+  .stop::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 18px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--ink);
+  }
+  .stop:last-child::before {
+    display: none;
+  }
+  /* the line is only solid as far as the route is picked */
+  .stop.open::before,
+  .stop.later::before {
+    background: repeating-linear-gradient(var(--line) 0 4px, transparent 4px 8px);
+  }
+  .dot {
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    margin: 3px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
     background: var(--bg);
-    color: var(--ink);
-    font: 500 var(--size-13) / 1.3 var(--font);
-    font-stretch: var(--stretch-data);
-    text-align: left;
-    overflow-wrap: anywhere;
   }
-  button.chip {
-    cursor: pointer;
+  .dot.start {
+    border: 0;
+    background: var(--signal);
   }
-  button.chip[aria-pressed='true'] {
-    border-color: var(--ink);
-    box-shadow: inset 0 0 0 1px var(--ink);
-  }
-  .chip.end {
-    border-color: var(--signal);
-  }
-  .chip.end.finish {
+  .dot.finish {
     border-color: var(--flare);
+    box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 10px var(--flare);
   }
-  .count {
-    color: var(--ink-2);
-    font-variant-numeric: tabular-nums;
+  .dot.ask {
+    border-style: dashed;
+    border-color: var(--ink-2);
   }
-  .more,
-  .filter {
-    margin: 8px 0;
+  .body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .label {
+    margin: 0;
     color: var(--ink-2);
     font-size: var(--size-13);
+    font-weight: 600;
   }
-  .sentinel {
-    height: 1px;
+  .label:focus {
+    outline: none;
+  }
+  .label:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  .title {
+    font-weight: 650;
+    overflow-wrap: anywhere;
+  }
+  .change {
+    justify-self: start;
+    min-height: 44px;
+    margin: -12px 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 650;
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .change:hover {
+    text-decoration-color: currentColor;
+  }
+  .choices {
+    list-style: none;
+    display: grid;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0;
+  }
+  .choice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 550 var(--size-14, 0.9rem) / 1.25 var(--font);
+    text-align: left;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+  }
+  .choice:hover {
+    border-color: var(--ink);
+  }
+  .bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: color-mix(in srgb, var(--signal) 12%, transparent);
+    pointer-events: none;
+  }
+  .name,
+  .count {
+    position: relative;
+  }
+  .count {
+    flex: none;
+    color: var(--ink-2);
+    font-stretch: var(--stretch-data);
+    font-variant-numeric: tabular-nums;
   }
   .text {
     min-height: 44px;
@@ -164,9 +279,44 @@
     border: 0;
     background: none;
     color: var(--signal);
-    font: inherit;
-    font-weight: 600;
+    font: 600 var(--size-13) / 1 var(--font);
     text-decoration: underline;
     cursor: pointer;
+  }
+
+  /* room to spare: the same line across the page, one column per stop, the choices hanging
+     under the open one */
+  @container (min-width: 720px) {
+    .line {
+      display: grid;
+      grid-template-columns: repeat(var(--stops), minmax(140px, 1fr));
+      gap: 0 16px;
+      overflow-x: auto;
+    }
+    .stop {
+      grid-template-columns: none;
+      grid-template-rows: 20px auto;
+      align-content: start;
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+    .stop::before {
+      left: 18px;
+      right: -14px;
+      top: 9px;
+      bottom: auto;
+      width: auto;
+      height: 2px;
+    }
+    .stop.open::before,
+    .stop.later::before {
+      background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px);
+    }
+    .dot {
+      margin: 3px 0;
+    }
+    .change {
+      margin: -12px 0 0;
+    }
   }
 </style>
