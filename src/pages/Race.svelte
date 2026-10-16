@@ -128,7 +128,18 @@
   if (extra.daily) void dailyNumber(extra.daily).then((d) => (daily = d));
   const seconds = $derived(Math.round((timed ? (room?.myTimeMs ?? realMs ?? elapsedMs(race)) : elapsedMs(race)) / 100) / 10);
   const shared = $derived({ from, to, via: race.route.slice(1, -1), seconds });
-  const card = $derived(shareText(shared, { url: resultUrl(shared, location.origin), ...(daily ? { daily } : {}) }));
+  // the shortest route's length, once the search has found it (for the share card)
+  let shortest = $state<number | null>(null);
+  $effect(() => {
+    const s = session;
+    if (!s) return;
+    const update = () => {
+      if (s.status.kind === 'found') shortest = s.status.distance;
+    };
+    update();
+    return s.on(update);
+  });
+  const card = $derived(shareText(shared, { url: resultUrl(shared, location.origin), shortest, ...(daily ? { daily } : {}) }));
   const deadEnd = $derived(!!article && article.links.size === 0);
 
   function startSearch() {
@@ -658,7 +669,7 @@
       </tbody>
     </table>
   {/if}
-  {#if race.status === 'finished' && !inRoom}
+  {#if race.status === 'finished'}
     <div class="share-row"><ShareButton text={card} /></div>
   {/if}
 {/snippet}

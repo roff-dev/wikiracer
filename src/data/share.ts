@@ -78,14 +78,35 @@ export function scoreWords(clicks: number, shortest: number, shared = false): st
   return `${over} more than the shortest`;
 }
 
-// The share card: no par and no route, so it can't spoil the course for the people it's sent to.
+// The route as squares, one per click, ten to a row: green up to the shortest route's length,
+// yellow for each click past it, blue for every click while the shortest isn't known
+export function stepSquares(clicks: number, shortest: number | null): string {
+  const squares = Array.from({ length: clicks }, (_, i) => (shortest === null ? '🟦' : i < shortest ? '🟩' : '🟨'));
+  const rows: string[] = [];
+  for (let i = 0; i < squares.length; i += 10) rows.push(squares.slice(i, i + 10).join(''));
+  return rows.join('\n');
+}
+
+// How the route compares with the shortest
+export function shortestWords(clicks: number, shortest: number): string {
+  const over = clicks - shortest;
+  if (over < 0) return `${-over} fewer than my map's shortest (${shortest})`;
+  if (over === 0) return `Perfect: the shortest route is ${shortest}`;
+  return `${over} more than the shortest (${shortest})`;
+}
+
+// The share card: the route as squares and how close it came to the shortest, but no article
+// between the start and the finish, so it can't spoil the course for the people it's sent to.
 // The first line carries the daily course's number when the race was the daily.
-export function shareText(r: SharedResult, opts: { url: string; daily?: number }): string {
+export function shareText(r: SharedResult, opts: { url: string; daily?: number; shortest?: number | null }): string {
   const n = clicksOf(r);
+  const shortest = opts.shortest ?? null;
   return [
     opts.daily ? `Wikiracer #${opts.daily}` : 'Wikiracer',
     `${displayTitle(r.from)} to ${displayTitle(r.to)}`,
+    stepSquares(n, shortest),
     `${n.toLocaleString('en-GB')} ${n === 1 ? 'click' : 'clicks'} in ${clock(r.seconds)}`,
+    ...(shortest === null ? [] : [shortestWords(n, shortest)]),
     opts.url,
   ].join('\n');
 }
