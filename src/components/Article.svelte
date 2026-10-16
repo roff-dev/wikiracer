@@ -3,6 +3,7 @@
   // image credits are handled by one delegated listener on the body. While the next article loads,
   // `article` is null and the title shows from `pending` (the tapped link morphs into it) over
   // skeleton lines (or `note`, when it failed). `onpress` hears a game link pressed (its title) or the press abandoned (null).
+  // Pressing and holding a game link (or right-clicking it) pins it instead: `onpin` hears its title.
   import '../styles/article.css';
   import type { Snippet } from 'svelte';
   import Sheet from './Sheet.svelte';
@@ -14,12 +15,17 @@
     pending = '',
     onmove,
     onpress,
+    onpin,
+    pinned = [],
     note,
   }: {
     article: Article | null;
     pending?: string;
     onmove?: (to: string, from: Element) => void;
     onpress?: (to: string | null) => void;
+    onpin?: (to: string) => void;
+    // titles pinned from this article, marked where they appear
+    pinned?: string[];
     // shown under the title: a load error, or a dead end
     note?: Snippet;
   } = $props();
@@ -44,6 +50,13 @@
     }
   });
 
+  // the links pinned from this article carry a mark
+  $effect(() => {
+    if (!article) return;
+    const on = new Set(pinned);
+    for (const a of root.querySelectorAll('a.race')) a.classList.toggle('pinned', on.has(a.getAttribute('data-to')!));
+  });
+
   async function showCredit(img: HTMLImageElement) {
     const file = img.dataset.file!;
     credit = { file, src: img.currentSrc || img.src, alt: img.alt, data: null };
@@ -57,6 +70,11 @@
     const link = target.closest('a.race, area[data-to]');
     if (link) {
       e.preventDefault();
+      // the click that ends a press-and-hold doesn't follow the link it pinned
+      if (held) {
+        held = false;
+        return;
+      }
       onmove?.(link.getAttribute('data-to')!, link);
       return;
     }
@@ -73,10 +91,30 @@
 
   // The press highlight lands on pointerdown, before the browser's own :active on touch screens
   let pressed: Element | null = null;
+  // a press held for HOLD_MS pins the link; `held` swallows the click that follows it
+  const HOLD_MS = 450;
+  let holdTimer: ReturnType<typeof setTimeout> | undefined;
+  let held = false;
+  let downAt = { x: 0, y: 0 };
   function onpointerdown(e: PointerEvent) {
+    held = false;
     pressed = (e.target as Element).closest('a.race');
     pressed?.classList.add('pressed');
-    if (pressed) onpress?.(pressed.getAttribute('data-to'));
+    if (!pressed) return;
+    onpress?.(pressed.getAttribute('data-to'));
+    if (!onpin || e.button !== 0) return;
+    downAt = { x: e.clientX, y: e.clientY };
+    const link = pressed;
+    holdTimer = setTimeout(() => {
+      held = true;
+      onpress?.(null);
+      pin(link);
+      release();
+    }, HOLD_MS);
+  }
+  // a finger that moves more than a little is scrolling, not holding
+  function onpointermove(e: PointerEvent) {
+    if (holdTimer !== undefined && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 10) clearTimeout(holdTimer);
   }
   // a touch that turned into a scroll: the prefetch started on pointerdown is dropped
   function oncancel() {
@@ -84,8 +122,26 @@
     release();
   }
   function release() {
+    clearTimeout(holdTimer);
+    holdTimer = undefined;
     pressed?.classList.remove('pressed');
     pressed = null;
+  }
+  function pin(link: Element) {
+    navigator.vibrate?.(15);
+    onpin?.(link.getAttribute('data-to')!);
+  }
+  // right-click, or a long press where the browser reports one, pins too (once per press)
+  function oncontextmenu(e: MouseEvent) {
+    const link = (e.target as Element).closest('a.race');
+    if (!link || !onpin) return;
+    e.preventDefault();
+    if (held) return;
+    // any click after it is the end of the same press; the next pointerdown clears this
+    held = true;
+    onpress?.(null);
+    pin(link);
+    release();
   }
 
   const sourceUrl = $derived(article ? (article.revision ? revisionUrl(article.title, article.revision) : articleUrl(article.title)) : '');
@@ -112,6 +168,8 @@
     onclick={act}
     {onkeydown}
     {onpointerdown}
+    {onpointermove}
+    {oncontextmenu}
     onpointerup={release}
     onpointercancel={oncancel}
     onpointerleave={release}

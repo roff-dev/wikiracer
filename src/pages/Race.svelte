@@ -45,6 +45,7 @@
   import Article from '../components/Article.svelte';
   import CourseHero from '../components/CourseHero.svelte';
   import Footer from '../components/Footer.svelte';
+  import Pins from '../components/Pins.svelte';
   import Reveal from '../components/Reveal.svelte';
   import RouteLine from '../components/RouteLine.svelte';
   import ShareButton from '../components/ShareButton.svelte';
@@ -53,7 +54,7 @@
   import { dailyNumber } from '../data/daily';
   import { clock, displayTitle, limitWords, plural, resultUrl, shareText, splits } from '../data/share';
   import { recordDaily } from '../data/record';
-  import { markFinished } from '../data/storage';
+  import { markFinished, readJson, writeJson } from '../data/storage';
   import { getTheme, setTheme, type Theme } from '../data/theme';
   import { startTier } from '../map/tiers';
   import { loadArticle, type Article as Loaded } from '../race/article';
@@ -97,6 +98,8 @@
   let confirmOpen = $state(false);
   let rulesOpen = $state(false);
   let theme = $state<Theme>(getTheme());
+  // links pinned from the article on screen (at most MAX_PINS, the oldest dropped)
+  let pins = $state<string[]>([]);
   let session = $state.raw<SearchSession | null>(null);
   // after giving up: the shortest route from the article given up on
   let fromHere = $state<{ title: string; titles: string[] | null; done: boolean } | null>(null);
@@ -197,6 +200,7 @@
       pending = '';
       timer.start();
       announce = n > 0 ? `Now on ${a.display}. ${plural(n, 'click')}.` : `Now on ${a.display}. The race has started.`;
+      if (n === 0) pinTip();
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
       loadError = e instanceof WikiError && e.status === 404 ? 'missing' : 'failed';
@@ -226,6 +230,8 @@
   function follow(target: string, link: Element) {
     if (loading || !article || phase !== 'race') return;
     loading = true;
+    // pins belong to the article they were pinned from
+    pins = [];
     if (!reducedMotion) navigator.vibrate?.(10);
     race = move(addTime(race, timer.stop()), target);
     save();
@@ -239,6 +245,28 @@
       pending = displayTitle(target);
       scrollTo(0, 0);
     }).then(() => show(target));
+  }
+
+  const MAX_PINS = 6;
+  function pinLink(target: string) {
+    if (phase !== 'race') return;
+    if (pins.some((p) => sameTitle(p, target))) {
+      announce = `${displayTitle(target)} is already pinned.`;
+      return;
+    }
+    pins = [...pins, target].slice(-MAX_PINS);
+    announce = `Pinned ${displayTitle(target)}.`;
+    writeJson(PIN_TIP, true);
+  }
+  const unpin = (target: string) => (pins = pins.filter((p) => p !== target));
+
+  // The first race on this device mentions pinning, once an article is on screen
+  const PIN_TIP = 'wikiracer.pinTip';
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  function pinTip() {
+    if (readJson(PIN_TIP, false)) return;
+    writeJson(PIN_TIP, true);
+    say(coarse ? 'Tip: press and hold a link to pin it, so you can come back to it.' : 'Tip: right-click a link to pin it, so you can come back to it.');
   }
 
   function begin() {
@@ -470,6 +498,7 @@
     <li>Every link to another article works, including the ones in the navigation boxes at the bottom.</li>
     <li>No going back. Once you leave an article, the only way back to it is a link on a later page.</li>
     <li>No Find. Read and scroll.</li>
+    <li>{coarse ? 'Press and hold a link' : 'Right-click a link'} to pin it, then tap the pin to take that link later, without scrolling back to it.</li>
     {#if inRoom}
       <li>You have {limitWords(inRoom.limit)} to reach the finish. Anyone still racing then doesn't finish.</li>
     {/if}
@@ -535,7 +564,7 @@
   </div>
 {:else if phase === 'race'}
   <a class="skip" href="#article">Skip to article</a>
-  <div class="race">
+  <div class="race" class:pinning={pins.length > 0}>
     <header class="hud">
       <Wordmark />
       {@render hudStats()}
@@ -546,8 +575,9 @@
     <div class="strip"><Trail route={race.route} {to} />{@render inRoom?.board()}</div>
     <div class="layout">
       <main id="article" tabindex="-1" bind:this={view}>
-        <Article {article} {pending} onmove={follow} onpress={press} note={loadError ? errorNote : deadEnd ? deadEndNote : undefined} />
+        <Article {article} {pending} onmove={follow} onpress={press} onpin={pinLink} pinned={pins} note={loadError ? errorNote : deadEnd ? deadEndNote : undefined} />
       </main>
+      {#if pins.length}<Pins {pins} onfollow={follow} onunpin={unpin} />{/if}
     </div>
   </div>
   <div id="race-menu" class="menu" popover="auto" bind:this={menu}>
@@ -814,6 +844,10 @@
   .race {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
+  /* room for the row of pins over the race bar */
+  .race.pinning {
+    padding-bottom: calc(130px + env(safe-area-inset-bottom));
+  }
   .strip {
     position: sticky;
     top: 0;
@@ -997,8 +1031,16 @@
   }
 
   @media (min-width: 900px) {
-    .race {
+    .race,
+    .race.pinning {
       padding-bottom: 0;
+    }
+    /* the pins take a column beside the article */
+    .race.pinning .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      gap: 8px;
+      padding-right: var(--gutter);
     }
     .hud {
       position: sticky;

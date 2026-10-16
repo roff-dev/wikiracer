@@ -72,6 +72,25 @@
   text-decoration-color: color-mix(in srgb, var(--link) 40%, transparent);
   border-radius: 3px;
   -webkit-tap-highlight-color: transparent;
+  /* a long press pins the link, so no link preview or text selection on it */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* a link pinned from this article: a dot before it, in the link's colour */
+.article a.race.pinned {
+  text-decoration-color: var(--link);
+}
+.article a.race.pinned::before {
+  content: '';
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  margin: 0 0.3em 0.12em 0.1em;
+  border-radius: 50%;
+  background: var(--link);
+  vertical-align: middle;
 }
 
 .article a.race::after {
