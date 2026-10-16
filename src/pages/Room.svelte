@@ -412,9 +412,13 @@
 </Sheet>
 
 <style>
+  /* a screen tall from the start, so the footer doesn't jump when the room replaces
+     "Joining room…" */
   .room {
     display: grid;
+    align-content: start;
     gap: 32px;
+    min-height: 100svh;
     max-width: 1240px;
     margin: 0 auto;
     padding: 32px var(--gutter) 56px;
