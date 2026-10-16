@@ -1,0 +1,117 @@
+# Rebuilds the link map when Wikipedia publishes a newer monthly dump, and puts it live.
+#
+# Runs every morning; most runs stop after a minute because there's no newer dump than the one in
+# public/map.json. When there is, it builds the map (pipeline/download → graph → encode → pools,
+# about 25 minutes here), pushes the chunk files to the four data sites, checks real searches
+# against them, then commits the site's new map.json, indexes and course files, which redeploys
+# the site. Between the data push and the site redeploy, searches show the maintenance state.
+#
+# Needs one secret, MAP_PUSH_TOKEN: a fine-grained token for the wikiracer-map organisation with
+# Contents read and write on map-1 … map-4. The site commit uses this repo's own token.
+name: Map refresh
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      run:
+        description: Dump run to build (YYYYMMDD). Empty means the newest finished one.
+        required: false
+      force:
+        description: Build even if the run isn't newer than the live map
+        type: boolean
+        default: false
+
+concurrency:
+  group: map-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Is there a newer dump?
+        id: check
+        env:
+          RUN: ${{ inputs.run }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          live=$(node -p "require('./public/map.json').version")
+          if [ -n "$RUN" ]; then run=$RUN; else
+            set +e; out=$(node pipeline/download.mjs --check); code=$?; set -e
+            echo "$out"
+            if [ $code -eq 2 ]; then echo "go=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+            [ $code -eq 0 ] || exit $code
+            run=$(echo "$out" | sed -n 's/^run=//p')
+          fi
+          echo "live map $live, dump run $run"
+          if [ "$run" \> "$live" ] || [ "$FORCE" = "true" ]; then go=true; else go=false; fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+
+      - name: Download
+        if: steps.check.outputs.go == 'true'
+        run: node pipeline/download.mjs --run ${{ steps.check.outputs.run }}
+
+      - name: Graph
+        if: steps.check.outputs.go == 'true'
+        run: node --max-old-space-size=12000 pipeline/graph.mjs
+
+      # 11 GB the later steps don't read
+      - name: Delete the dumps
+        if: steps.check.outputs.go == 'true'
+        run: rm -f pipeline/work/dumps-*/*.sql.gz
+
+      # checks every list and title against the graph before it writes public/map.json
+      - name: Encode
+        if: steps.check.outputs.go == 'true'
+        run: node --max-old-space-size=12000 pipeline/encode.mjs
+
+      # the daily schedule only grows: it fails rather than change a published day
+      - name: Pools
+        if: steps.check.outputs.go == 'true'
+        run: node --max-old-space-size=12000 pipeline/pools.mjs
+
+      - name: Git identity
+        if: steps.check.outputs.go == 'true'
+        run: |
+          git config --global user.name roff-dev
+          git config --global user.email kieronoates@hotmail.co.uk
+
+      # waits until every chunk answers a Range request on its data site
+      - name: Publish to the data sites
+        if: steps.check.outputs.go == 'true'
+        env:
+          MAP_PUSH_TOKEN: ${{ secrets.MAP_PUSH_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${MAP_PUSH_TOKEN}@github.com/wikiracer-map/".insteadOf "https://github.com/wikiracer-map/"
+          node pipeline/publish.mjs
+
+      - name: Check searches against the data sites
+        if: steps.check.outputs.go == 'true'
+        run: npm run map:check
+
+      - name: Put the new map live
+        if: steps.check.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day=$(node -p "new Date(require('./public/map.json').dumpDate + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })")
+          git add public
+          git commit -q -m "Refresh the map from the $day dump"
+          # main may have moved during the build; the refresh only touches public/
+          git pull -q --rebase "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" main
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" HEAD:main

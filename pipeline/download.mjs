@@ -1,11 +1,12 @@
 // Step 1 of the map pipeline: fetch the five SQL dumps for the newest
 // complete monthly run from the mirror and check each against the official md5sums file.
 //
-//   node pipeline/download.mjs [--run YYYYMMDD] [--out <dir>]
+//   node pipeline/download.mjs [--run YYYYMMDD] [--out <dir>] [--check]
 //
 // Default out is pipeline/work/dumps-<run>/. Files already there are hashed, not re-fetched;
 // a verified file is recorded in run.json (with size and mtime) so later runs skip the hash.
-// Exit 2 means no complete run was found: the current map stays live.
+// Exit 2 means no complete run was found: the current map stays live. --check only prints the
+// run it would fetch (`run=YYYYMMDD`, for the refresh workflow) and downloads nothing.
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -112,6 +113,10 @@ const files = await runFiles(run);
 if (!files) {
   console.log(`${run}: tables not finished. The current map stays live.`);
   process.exit(2);
+}
+if (args.includes('--check')) {
+  console.log(`run=${run}`);
+  process.exit(0);
 }
 const sums = await md5sums(run);
 const out = opt('--out') ?? join(dirname(fileURLToPath(import.meta.url)), 'work', `dumps-${run}`);

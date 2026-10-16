@@ -138,4 +138,4 @@ while (left.size) {
   }
   await new Promise((r) => setTimeout(r, PROBE_EVERY));
 }
-log('all data sites are live. Next: commit and push public/ so map.json and the indexes go live together');
+log('all data sites are live. Next: npm run map:check, then commit and push public/ so map.json and the indexes go live together');
