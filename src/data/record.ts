@@ -1,4 +1,4 @@
-// The daily record kept in this browser (spec §3.8): each daily course finished, by date, with its
+// The daily record kept in this browser: each daily course finished, by date, with its
 // clicks and time. The streak and the best result are worked out from it, so they can't drift
 // apart from what was played. Behind try/catch (storage.ts): without storage, there's no record.
 import { readJson, writeJson } from './storage.ts';
