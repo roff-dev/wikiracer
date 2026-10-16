@@ -109,7 +109,7 @@
   {#if problem && !(table?.full && !table.played)}<p class="problem" role="alert">{problem}</p>{/if}
   {#if table}
     {#if rows.length}
-      <ResultsTable {rows} caption={table.played ? 'Results (tap a name for the route)' : 'Results so far'} />
+      <ResultsTable {rows} caption={table.played ? 'Results' : 'Results so far'} />
     {:else}
       <p class="empty">No results yet. Be the first.</p>
     {/if}

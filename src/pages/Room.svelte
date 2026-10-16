@@ -276,7 +276,7 @@
 {#snippet table()}
   <section class="room-table">
     {#if results}
-      <ResultsTable {rows} caption="This room (tap a name for the route)" />
+      <ResultsTable {rows} caption="This room" />
     {:else}
       <h3 class="tt">This room</h3>
       {@render boardList()}

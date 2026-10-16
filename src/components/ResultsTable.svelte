@@ -17,7 +17,8 @@
 
 <script lang="ts">
   // A room's standings or a challenge's table: place, nickname, clicks, time. A row with a route
-  // opens to show it as a line, with the check against my map.
+  // has a "See route" chip by the name, and opens to show the route as a line, with the check
+  // against my map.
   import RouteLine from './RouteLine.svelte';
   import { clock } from '../data/share';
   import { mapDateText } from '../site';
@@ -41,7 +42,10 @@
         <td class="pl">{r.status === 'finished' ? r.place : ''}</td>
         <td>
           {#if r.route}
-            {#if r.colour}<span class="key" style:--c={r.colour} aria-hidden="true"></span>{/if}<button class="name" type="button" aria-expanded={openRow === i} onclick={() => (openRow = openRow === i ? null : i)}>{r.name}{r.you ? ' (you)' : ''}</button>
+            <button class="name" type="button" aria-expanded={openRow === i} onclick={() => (openRow = openRow === i ? null : i)}>
+              <span class="who">{#if r.colour}<span class="key" style:--c={r.colour} aria-hidden="true"></span>{/if}{r.name}{r.you ? ' (you)' : ''}</span>
+              <span class="see">{openRow === i ? 'Hide route' : 'See route'}<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8l4 4 4-4" /></svg></span>
+            </button>
           {:else}
             {r.name}{r.you ? ' (you)' : ''}
           {/if}
@@ -108,7 +112,12 @@
   th.num {
     text-align: right;
   }
+  /* the name and its "See route" chip: the whole thing opens the route */
   .name {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
     min-width: 44px;
     min-height: 44px;
     text-align: left;
@@ -117,10 +126,47 @@
     background: none;
     color: inherit;
     font: inherit;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.2em;
     cursor: pointer;
+  }
+  /* the colour key stays on the name's line */
+  .who {
+    white-space: nowrap;
+  }
+  .see {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 6px 3px 10px;
+    border: 1px solid color-mix(in srgb, var(--link) 40%, transparent);
+    border-radius: 999px;
+    color: var(--link);
+    font-size: var(--size-13);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .name:hover .see,
+  .name:focus-visible .see,
+  .name[aria-expanded='true'] .see {
+    border-color: var(--link);
+    background: color-mix(in srgb, var(--link) 10%, transparent);
+  }
+  .see svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 160ms ease;
+  }
+  .name[aria-expanded='true'] .see svg {
+    transform: rotate(180deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .see svg {
+      transition: none;
+    }
   }
   /* the line's colour on the map, on the void it's drawn on */
   .key {

@@ -64,7 +64,7 @@
     <CourseHero from={info.from} to={info.to} />
     <section class="table">
       {#if rows.length}
-        <ResultsTable {rows} caption={info.played ? 'Results (tap a name for the route)' : 'Results so far: the times to beat'} />
+        <ResultsTable {rows} caption={info.played ? 'Results' : 'Results so far: the times to beat'} />
       {:else}
         <p class="empty">No results yet. Be the first.</p>
       {/if}
