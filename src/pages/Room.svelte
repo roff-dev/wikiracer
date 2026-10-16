@@ -534,6 +534,7 @@
     font: 800 1em / 1 var(--font);
     font-stretch: 125%;
     letter-spacing: 0.04em;
+    min-height: 44px;
     cursor: pointer;
   }
   .players h2 {
@@ -751,6 +752,55 @@
     }
     .invite {
       grid-column: 1 / -1;
+    }
+  }
+  /* landscape phones: the invitation and the course on the left, the players and Start on the
+     right, so Start stays on the first screen */
+  @media (orientation: landscape) and (max-height: 500px) and (min-width: 600px) {
+    .room {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-content: start;
+      gap: 16px 32px;
+      padding-top: 16px;
+    }
+    /* the invitation spans the right column's three rows (Start, players, Leave room), so
+       those stack tight; the course follows below */
+    .invite {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      align-self: start;
+    }
+    /* sized to the half column, so the code stays on one line */
+    .code-row {
+      font-size: clamp(2rem, 6vw, 18svh);
+    }
+    .course {
+      grid-column: 1;
+      grid-row: 4;
+    }
+    .actions.host {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .players {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    /* standings have no Start row above them */
+    .room-table {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+    .room > .text {
+      grid-column: 2;
+      grid-row: 3;
+      align-self: start;
+    }
+    .scorings {
+      margin-top: 16px;
+    }
+    .seats li {
+      padding: 8px 0;
     }
   }
 </style>
