@@ -25,6 +25,7 @@
     voice,
     finished = true,
     stopped = false,
+    timeUp = false,
     takeover = $bindable(false),
     extra,
     others = [],
@@ -43,6 +44,8 @@
     finished?: boolean;
     // a timed room's player who stopped once someone had won: the route marked incomplete
     stopped?: boolean;
+    // a room's time limit ran out before the player reached the finish
+    timeUp?: boolean;
     takeover?: boolean;
     extra?: Snippet;
     // other players' routes (a room's standings), drawn beside yours
@@ -53,6 +56,7 @@
 
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const shared = $derived(voice === 'shared');
+  const quit = $derived(timeUp ? 'ran out of time' : stopped ? 'stopped' : 'gave up');
 
   let status = $state<Status>({ kind: 'loading' });
   let beat = $state<RevealBeat | null>(null);
@@ -86,13 +90,13 @@
       : `Search map: ${plural(explored, 'article')} explored from both ends.`,
   );
   const topLine = $derived(
-    shared ? `This race: ${plural(clicks, 'click')} in ${clock(seconds)}` : finished ? `You made it: ${plural(clicks, 'click')} in ${clock(seconds)}.` : `You ${stopped ? 'stopped' : 'gave up'} after ${plural(clicks, 'click')}.`,
+    shared ? `This race: ${plural(clicks, 'click')} in ${clock(seconds)}` : finished ? `You made it: ${plural(clicks, 'click')} in ${clock(seconds)}.` : `You ${quit} after ${plural(clicks, 'click')}.`,
   );
 
   function found(distance: number): string {
     if (shared) return `This race took ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
     if (finished) return `You took ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
-    return `You ${stopped ? 'stopped' : 'gave up'} after ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
+    return `You ${quit} after ${plural(clicks, 'click')}. The shortest route is ${distance}.`;
   }
 
   function startDirector() {
@@ -335,7 +339,7 @@
 
     <div class="routes">
       <section>
-        <h3><span class="key yours" aria-hidden="true"></span>{shared ? 'This race' : stopped ? 'Your route (incomplete)' : 'Your route'}</h3>
+        <h3><span class="key yours" aria-hidden="true"></span>{shared ? 'This race' : stopped || timeUp ? 'Your route (incomplete)' : 'Your route'}</h3>
         <RouteLine titles={route} missing={playerMissing} open={!finished} />
       </section>
       {#if status.kind === 'found' && shortest.length}

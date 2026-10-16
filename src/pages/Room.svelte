@@ -12,9 +12,9 @@
   import CopyButton from '../components/CopyButton.svelte';
   import Sheet from '../components/Sheet.svelte';
   import { normaliseCode, showCode } from '../../worker/names';
-  import type { ErrorCode, PlayerState, RoomState, Scoring, StandingRow } from '../../worker/protocol';
+  import { LIMITS, type ErrorCode, type PlayerState, type RoomState, type Scoring, type StandingRow } from '../../worker/protocol';
   import { surprise, type Difficulty } from '../data/pools';
-  import { clock, plural } from '../data/share';
+  import { clock, limitWords, plural } from '../data/share';
   import { REVEAL } from '../map/renderer';
   import { startTier } from '../map/tiers';
   import { RoomApiError, getCourse, restingText, saveName, savedName, seatFor } from '../room/api';
@@ -62,6 +62,7 @@
     { value: 'time', name: 'Timed', desc: 'First to the finish wins. The clock runs in real time, loading included.' },
   ];
   const scoring = $derived<Scoring>(room?.scoring ?? 'clicks');
+  const limit = $derived(room?.limit ?? 30);
   // a timed round's first finisher (the room's clock), once someone other than you is home
   const winner = $derived.by(() => {
     if (scoring !== 'time') return null;
@@ -219,6 +220,8 @@
           to: room.to,
           key: `${code}.${room.round}`,
           startAt: socket.local(startAt),
+          limit,
+          endsAt: socket.local(startAt + limit * 60_000),
           scoring,
           winner,
           myTimeMs: me?.timeMs ?? null,
@@ -373,9 +376,22 @@
                   </label>
                 {/each}
               </fieldset>
+              <fieldset class="limits">
+                <legend class="label">Time limit</legend>
+                <div class="limit-row">
+                  {#each LIMITS as m (m)}
+                    <label class="limit" class:on={limit === m}>
+                      <input type="radio" name="limit" value={m} checked={limit === m} onchange={() => socket?.send({ t: 'limit', minutes: m })} />
+                      {m === 60 ? '1 hour' : `${m} min`}
+                    </label>
+                  {/each}
+                </div>
+                <p class="hint">Anyone not at the finish by then doesn't finish.</p>
+              </fieldset>
             {:else}
               {@const s = SCORINGS.find((x) => x.value === scoring)!}
               <p class="scoring-line"><strong>{s.name}.</strong> {s.desc}</p>
+              <p class="scoring-line limit-line"><strong>{limitWords(limit)}</strong> to reach the finish.</p>
             {/if}
           {/if}
         </section>
@@ -490,9 +506,56 @@
     color: var(--ink-2);
     font-size: var(--size-13);
   }
+  /* the time limit: four options in one segmented row */
+  .limits {
+    display: grid;
+    gap: 8px;
+    max-width: 640px;
+    margin: 20px 0 0;
+    padding: 0;
+    border: 0;
+  }
+  .limits legend {
+    margin-bottom: 8px;
+    padding: 0;
+  }
+  .limit-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .limit {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .limit.on {
+    border-color: var(--signal);
+    box-shadow: inset 0 0 0 1px var(--signal);
+  }
+  .limit input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .limit:has(input:focus-visible) {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
   .scoring-line {
     margin: 20px 0 0;
     color: var(--ink-2);
+  }
+  .limit-line {
+    margin-top: 6px;
   }
   .scoring-line strong {
     color: var(--ink);

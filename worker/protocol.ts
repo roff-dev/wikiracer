@@ -4,8 +4,11 @@
 export type Mode = 'live' | 'challenge';
 // 'clicks': fewest clicks wins, time breaks ties; 'time': first to the finish wins, on the room's clock
 export type Scoring = 'clicks' | 'time';
+// A live round's time limit in minutes; anyone still racing at the end didn't finish
+export const LIMITS = [5, 15, 30, 60] as const;
+export type Limit = (typeof LIMITS)[number];
 export type Phase = 'lobby' | 'countdown' | 'race' | 'standings';
-// 'watching': joined during a race, plays from the next course; 'dnf': still racing at the 30-minute end
+// 'watching': joined during a race, plays from the next course; 'dnf': still racing at the time limit
 export type PlayerStatus = 'waiting' | 'racing' | 'finished' | 'gaveup' | 'dnf' | 'watching' | 'away';
 // 'exists': this seat already has a challenge result
 export type ErrorCode = 'full' | 'name' | 'expired' | 'rate' | 'bad' | 'started' | 'exists';
@@ -16,6 +19,7 @@ export type ClientMessage =
   | { t: 'hello'; seat: string; name: string }
   | { t: 'course'; from: string; to: string }
   | { t: 'scoring'; scoring: Scoring }
+  | { t: 'limit'; minutes: Limit }
   | { t: 'start' }
   | { t: 'move'; click: number; title: string }
   | { t: 'finish'; clicks: number; timeMs: number; route: string[] }
@@ -39,6 +43,7 @@ export interface RoomState {
   to: string;
   startAt?: number;
   scoring: Scoring;
+  limit: Limit;
   host: number;
   players: PlayerState[];
 }

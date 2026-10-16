@@ -3,11 +3,13 @@
 // Live phases: lobby → countdown → race → standings, then back to the lobby for the next course.
 // Countdown and race are one stored stage ('round'); which one it is follows from startAt.
 import { checkName, uniqueName } from './names.ts';
-import type { ErrorCode, Mode, Phase, PlayerState, PlayerStatus, RoomState, Scoring, StandingRow } from './protocol.ts';
+import { LIMITS, type ErrorCode, type Limit, type Mode, type Phase, type PlayerState, type PlayerStatus, type RoomState, type Scoring, type StandingRow } from './protocol.ts';
 
 export const MAX_SEATS = 4;
 export const COUNTDOWN_MS = 5000;
-export const ROUND_MS = 30 * 60_000;
+// the default time limit, and the limit of rooms stored before the host could pick one
+export const DEFAULT_LIMIT: Limit = 30;
+export const ROUND_MS = DEFAULT_LIMIT * 60_000;
 export const HOST_AWAY_MS = 60_000;
 export const EXPIRY_MS = 30 * 86_400_000;
 export const RATE = { messages: 20, windowMs: 10_000 };
@@ -45,6 +47,8 @@ export interface Room {
   startAt: number | null;
   // how a round is won; rooms stored before this existed score by clicks
   scoring?: Scoring;
+  // a round's time limit in minutes; rooms stored before this existed have 30
+  limit?: Limit;
   // seat number of the host
   host: number;
   // the creator's seat hash: their seat becomes host when they join, even if a friend got in first
@@ -81,10 +85,12 @@ export function validFinish(course: { from: string; to: string }, f: { clicks: u
 }
 
 export function createRoom(mode: Mode, from: string, to: string, now: number, owner: string | null = null): Room {
-  return { mode, from, to, created: now, lastActivity: now, round: 0, stage: 'lobby', startAt: null, scoring: 'clicks', host: 0, owner, seats: [], runs: {} };
+  return { mode, from, to, created: now, lastActivity: now, round: 0, stage: 'lobby', startAt: null, scoring: 'clicks', limit: DEFAULT_LIMIT, host: 0, owner, seats: [], runs: {} };
 }
 
 export const scoringOf = (r: Room): Scoring => r.scoring ?? 'clicks';
+export const limitOf = (r: Room): Limit => r.limit ?? DEFAULT_LIMIT;
+const limitMs = (r: Room) => limitOf(r) * 60_000;
 
 export function phaseAt(room: Room, now: number): Phase {
   if (room.stage === 'round') return now < room.startAt! ? 'countdown' : 'race';
@@ -187,6 +193,16 @@ export function setScoring(room: Room, n: number, scoring: unknown, now: number)
   return { ok: true, room: r };
 }
 
+// The host picks the time limit, between rounds
+export function setLimit(room: Room, n: number, minutes: unknown, now: number): Outcome {
+  const r = touch(room, now);
+  if (r.host !== n) return fail('bad');
+  if (r.stage === 'round') return fail('started');
+  if (!LIMITS.includes(minutes as Limit)) return fail('bad');
+  r.limit = minutes as Limit;
+  return { ok: true, room: r };
+}
+
 // The host starts from the lobby with at least 2 players connected; everyone connected races
 export function start(room: Room, n: number, now: number): Outcome {
   const r = touch(room, now);
@@ -202,8 +218,9 @@ export function start(room: Room, n: number, now: number): Outcome {
   return { ok: true, room: r };
 }
 
+// Nothing counts once the time is up, even before the alarm has run
 function racingRun(r: Room, n: number, now: number): Run | null {
-  if (phaseAt(r, now) !== 'race') return null;
+  if (phaseAt(r, now) !== 'race' || now >= r.startAt! + limitMs(r)) return null;
   const run = r.runs[n];
   return run?.status === 'racing' ? run : null;
 }
@@ -220,7 +237,7 @@ export function move(room: Room, n: number, click: unknown, title: unknown, now:
 export function finish(room: Room, n: number, f: { clicks: unknown; timeMs: unknown; route: unknown }, now: number): Outcome {
   const r = touch(room, now);
   const run = racingRun(r, n, now);
-  if (!run || !validFinish(r, f, ROUND_MS) || (f.clicks as number) < run.clicks) return fail('bad');
+  if (!run || !validFinish(r, f, limitMs(r)) || (f.clicks as number) < run.clicks) return fail('bad');
   run.status = 'finished';
   run.clicks = f.clicks as number;
   // a timed round counts real time from the start, loading included, on the room's clock
@@ -244,17 +261,17 @@ function settle(r: Room): Room {
   return r;
 }
 
-// The alarm at startAt + 30 min: anyone still racing didn't finish
+// The alarm at the time limit: anyone still racing didn't finish
 export function endRound(room: Room, now: number): Room {
   const r = clone(room);
-  if (r.stage !== 'round' || now < r.startAt! + ROUND_MS) return r;
+  if (r.stage !== 'round' || now < r.startAt! + limitMs(r)) return r;
   for (const run of Object.values(r.runs)) if (run.status === 'racing') run.status = 'dnf';
   r.stage = 'standings';
   return r;
 }
 
 // The one alarm: the round's end while one runs, else expiry 30 days after the last activity
-export const nextAlarm = (r: Room) => (r.stage === 'round' ? r.startAt! + ROUND_MS : r.lastActivity + EXPIRY_MS);
+export const nextAlarm = (r: Room) => (r.stage === 'round' ? r.startAt! + limitMs(r) : r.lastActivity + EXPIRY_MS);
 export const expired = (r: Room, now: number) => now >= r.lastActivity + EXPIRY_MS;
 
 // The rate rule: more than 20 messages in a 10 s window closes the socket
@@ -305,6 +322,7 @@ export function stateOf(room: Room, now: number): RoomState {
     to: room.to,
     ...(room.stage === 'round' ? { startAt: room.startAt! } : {}),
     scoring: scoringOf(room),
+    limit: limitOf(room),
     host: hostAt(room, now),
     players,
   };

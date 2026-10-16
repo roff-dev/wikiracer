@@ -17,6 +17,7 @@ import {
   nextAlarm,
   phaseAt,
   setCourse,
+  setLimit,
   setScoring,
   standings,
   start,
@@ -216,6 +217,9 @@ export class Course extends DurableObject<Env> {
       case 'scoring':
         out = setScoring(room, n, msg.scoring, now);
         break;
+      case 'limit':
+        out = setLimit(room, n, msg.minutes, now);
+        break;
       case 'start':
         out = start(room, n, now);
         break;
@@ -267,7 +271,7 @@ export class Course extends DurableObject<Env> {
     this.broadcast(room, next, now);
   }
 
-  // The round's 30-minute end, or expiry 30 days after the last activity
+  // The round's time limit, or expiry 30 days after the last activity
   async alarm(): Promise<void> {
     const now = Date.now();
     const room = this.room;

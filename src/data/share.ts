@@ -65,6 +65,9 @@ export function clock(seconds: number): string {
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-GB')} ${n === 1 ? one : many}`;
 
+// a room's time limit, in minutes, as words
+export const limitWords = (minutes: number) => (minutes === 60 ? '1 hour' : plural(minutes, 'minute'));
+
 // score words
 // (a shared result speaks about the race, not to you: 'It beat my map')
 export function scoreWords(clicks: number, shortest: number, shared = false): string {

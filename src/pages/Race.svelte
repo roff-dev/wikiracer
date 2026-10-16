@@ -11,6 +11,9 @@
     key: string;
     // local time the race begins (the countdown runs to it)
     startAt: number;
+    // the time limit in minutes, and the local time it runs out (anyone still racing doesn't finish)
+    limit: number;
+    endsAt: number;
     // 'time': first to the finish wins, on a real-time clock from the start
     scoring: 'clicks' | 'time';
     // a timed round's first finisher, when it isn't you
@@ -48,7 +51,7 @@
   import Sheet from '../components/Sheet.svelte';
   import Trail from '../components/Trail.svelte';
   import { dailyNumber } from '../data/daily';
-  import { clock, displayTitle, plural, resultUrl, shareText, splits } from '../data/share';
+  import { clock, displayTitle, limitWords, plural, resultUrl, shareText, splits } from '../data/share';
   import { recordDaily } from '../data/record';
   import { markFinished } from '../data/storage';
   import { getTheme, setTheme, type Theme } from '../data/theme';
@@ -100,7 +103,11 @@
   // a timed room: someone else won; stopped = went to the results instead of racing on
   let winnerOpen = $state(false);
   let winnerSeen = false;
-  let stopped = $state(readStopped());
+  let stopped = $state(readFlag('stopped'));
+  // a room's time limit ran out before the finish
+  let timeUp = $state(readFlag('timeup'));
+  // ms left before a room's time limit
+  let remaining = $state(Infinity);
   // a timed finish on this device's clock, until the room's own time arrives
   let realMs = $state<number | null>(null);
 
@@ -286,11 +293,19 @@
     }
   });
 
-  function readStopped(): boolean {
+  function readFlag(name: 'stopped' | 'timeup'): boolean {
     try {
-      return !!storeKey && sessionStorage.getItem(`${storeKey}.stopped`) === '1';
+      return !!storeKey && sessionStorage.getItem(`${storeKey}.${name}`) === '1';
     } catch {
       return false;
+    }
+  }
+
+  function setFlag(name: 'stopped' | 'timeup') {
+    try {
+      sessionStorage.setItem(`${storeKey}.${name}`, '1');
+    } catch {
+      // a reload shows the plain give-up wording, nothing worse
     }
   }
 
@@ -298,16 +313,23 @@
   function seeResults() {
     winnerOpen = false;
     stopped = true;
-    try {
-      sessionStorage.setItem(`${storeKey}.stopped`, '1');
-    } catch {
-      // a reload shows the map again, nothing worse
-    }
+    setFlag('stopped');
     race = giveUp(addTime(race, timer.stop()));
     save();
     inRoom?.ongiveup(n);
     end();
     takeover = false;
+    afterGiveUp();
+  }
+
+  // The room's time limit ran out: the run ends here, and the room marks it unfinished by itself
+  function outOfTime() {
+    timeUp = true;
+    setFlag('timeup');
+    race = giveUp(addTime(race, timer.stop()));
+    save();
+    end();
+    say("Time's up.");
     afterGiveUp();
   }
 
@@ -363,6 +385,12 @@
   // the clock text, from the saved legs plus the leg on screen; in a room, the countdown too
   const tickTimer = setInterval(() => {
     elapsed = timed && phase === 'race' ? Math.max(0, Date.now() - inRoom!.startAt) : elapsedMs(race) + timer.peek();
+    if (inRoom && phase === 'race') {
+      const was = remaining;
+      remaining = inRoom.endsAt - Date.now();
+      if (remaining <= 0) outOfTime();
+      else if (remaining <= 60_000 && was > 60_000) announce = 'One minute left.';
+    }
     if (phase === 'countdown' && inRoom) {
       const next = Math.max(0, Math.ceil((inRoom.startAt - Date.now()) / 1000));
       if (next !== left && next > 0 && next <= 3) announce = String(next);
@@ -442,6 +470,9 @@
     <li>Every link to another article works, including the ones in the navigation boxes at the bottom.</li>
     <li>No going back. Once you leave an article, the only way back to it is a link on a later page.</li>
     <li>No Find. Read and scroll.</li>
+    {#if inRoom}
+      <li>You have {limitWords(inRoom.limit)} to reach the finish. Anyone still racing then doesn't finish.</li>
+    {/if}
     {#if timed}
       <li>The clock runs in real time from the start, loading included.</li>
       <li>First to the finish wins.</li>
@@ -458,7 +489,11 @@
     <span class="sr">Finish: </span><span class="chip-title">{displayTitle(to)}</span>
   </span>
   <span class="stat clicks"><span class="num">{n}</span> <span class="unit">{n === 1 ? 'click' : 'clicks'}</span></span>
-  <span class="stat time" role="timer" aria-label="Race clock">{clock(elapsed / 1000)}</span>
+  {#if remaining <= 60_000}
+    <span class="stat time left" role="timer" aria-label="Time left">{clock(Math.ceil(remaining / 1000))} left</span>
+  {:else}
+    <span class="stat time" role="timer" aria-label="Race clock">{clock(elapsed / 1000)}</span>
+  {/if}
 {/snippet}
 
 <div class="toast" role="status" data-n={toastN}>{#key toastN}{#if toast}<p>{toast}</p>{/if}{/key}</div>
@@ -495,7 +530,7 @@
       <h1 class="cd-title">{displayTitle(from)}</h1>
       <p class="cd-to">to {displayTitle(to)}</p>
       <p class="cd-num" aria-hidden="true">{#key left}<span>{left > 0 && left <= 3 ? left : ''}</span>{/key}</p>
-      {#if left > 3}<p class="cd-ready">Get ready</p>{/if}
+      {#if left > 3}<p class="cd-ready">Get ready. You have {limitWords(inRoom!.limit)}.</p>{/if}
     </main>
   </div>
 {:else if phase === 'race'}
@@ -540,6 +575,7 @@
       voice="race"
       finished={race.status === 'finished'}
       {stopped}
+      {timeUp}
       bind:takeover
       extra={resultExtra}
       others={room?.others ?? []}
@@ -849,6 +885,11 @@
     color: var(--ink-2);
     font-weight: 600;
     text-align: right;
+  }
+  /* the last minute of a room's time limit */
+  .time.left {
+    color: var(--ink);
+    font-weight: 750;
   }
   .menu-btn {
     position: relative;
