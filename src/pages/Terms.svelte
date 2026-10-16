@@ -1,9 +1,10 @@
 <script lang="ts">
   import TextPage from './TextPage.svelte';
+  import { PROFILE_URL } from '../site';
 </script>
 
-<TextPage title="Terms" updated="14 October 2026">
-  <p class="lead">Wikiracer is a free game I made and run on my own, Kieron Oates. By using it you agree to these terms.</p>
+<TextPage title="Terms" updated="16 October 2026">
+  <p class="lead">Wikiracer is a free game made and run by me, <a href={PROFILE_URL}>roff-dev</a>. By using it you agree to these terms.</p>
 
   <h2>Using the site</h2>
   <ul>

@@ -1,9 +1,10 @@
 <script lang="ts">
   import TextPage from './TextPage.svelte';
+  import { PROFILE_URL } from '../site';
 </script>
 
-<TextPage title="Privacy" updated="14 October 2026">
-  <p class="lead">This site is made and run by me, Kieron Oates. There are no accounts, no ads and no tracking cookies, and I don't sell or share anything about you.</p>
+<TextPage title="Privacy" updated="16 October 2026">
+  <p class="lead">This site is made and run by me, <a href={PROFILE_URL}>roff-dev</a>. There are no accounts, no ads and no tracking cookies, and I don't sell or share anything about you.</p>
 
   <h2>What stays on your device</h2>
   <p>A few things are kept in your browser's local storage so the site remembers them between visits. They never leave your device unless the list below says so, and clearing your browser's site data removes them.</p>
