@@ -55,6 +55,7 @@
   import { clock, displayTitle, limitWords, plural, resultUrl, shareText, splits } from '../data/share';
   import { recordDaily } from '../data/record';
   import { markFinished, readJson, writeJson } from '../data/storage';
+  import { TEXT_SIZES, readTextSize, stepTextSize } from '../data/textSize';
   import { getTheme, setTheme, type Theme } from '../data/theme';
   import { startTier } from '../map/tiers';
   import { loadArticle, type Article as Loaded } from '../race/article';
@@ -100,6 +101,7 @@
   let theme = $state<Theme>(getTheme());
   // links pinned from the article on screen (at most MAX_PINS, the oldest dropped)
   let pins = $state<string[]>([]);
+  let textScale = $state(readTextSize());
   let session = $state.raw<SearchSession | null>(null);
   // after giving up: the shortest route from the article given up on
   let fromHere = $state<{ title: string; titles: string[] | null; done: boolean } | null>(null);
@@ -379,13 +381,19 @@
     inRoom?.onleave();
   }
 
-  // The second search, from where the player gave up, once the first has finished with the worker
+  // The second search, from where the player gave up, once the first has finished with the worker.
+  // In a room the worker outlives this page, so the search goes with it (it would stop the next
+  // round's search otherwise)
+  let fromHereSearch: SearchSession | null = null;
+  let destroyed = false;
   function afterGiveUp() {
     const here = current(race);
     if (!client || !here || sameTitle(here, from)) return;
     fromHere = { title: here, titles: null, done: false };
     const go = () => {
+      if (destroyed) return;
       const s = new SearchSession(client!, here, to, 1000);
+      fromHereSearch = s;
       s.on(() => {
         if (running(s.status)) return;
         fromHere = { title: here, titles: s.status.kind === 'found' ? s.status.titles : null, done: true };
@@ -493,6 +501,8 @@
     removeEventListener('pageshow', onShow);
     stopGuard?.();
     prefetch?.ctrl.abort();
+    destroyed = true;
+    fromHereSearch?.cancel();
     // a room's search and worker belong to the room page
     if (!inRoom) {
       session?.cancel();
@@ -585,16 +595,26 @@
     </header>
     <div class="strip"><Trail route={race.route} {to} />{@render inRoom?.board()}</div>
     <div class="layout">
-      <main id="article" tabindex="-1" bind:this={view}>
+      <main id="article" tabindex="-1" bind:this={view} style:--text-scale={textScale}>
         <Article {article} {pending} onmove={follow} onpress={press} onpin={pinLink} pinned={pins} note={loadError ? errorNote : deadEnd ? deadEndNote : undefined} />
       </main>
-      {#if pins.length}<Pins {pins} onfollow={follow} onunpin={unpin} />{/if}
+      {#if pins.length}<Pins {pins} onfollow={follow} onunpin={unpin} />{:else}<p class="pin-hint">{coarse ? 'Press and hold' : 'Right-click'} a link to pin it here, then take it whenever you like.</p>{/if}
     </div>
   </div>
   <div id="race-menu" class="menu" popover="auto" bind:this={menu}>
     <button class="item" type="button" onclick={() => openFromMenu('giveUp')}>Give up</button>
     <button class="item" type="button" onclick={() => openFromMenu('rules')}>Rules</button>
     {#if inRoom}<button class="item" type="button" onclick={() => openFromMenu('leave')}>Leave room</button>{/if}
+    <div class="text-size" role="group" aria-labelledby="text-size-head">
+      <span id="text-size-head">Text size</span>
+      <button class="size-btn hover-fill" type="button" aria-label="Smaller text" disabled={textScale === TEXT_SIZES[0]} onclick={() => (textScale = stepTextSize(textScale, -1))}>
+        <span class="a small" aria-hidden="true">A</span>
+      </button>
+      <span class="pct" aria-live="polite">{Math.round(textScale * 100)}%</span>
+      <button class="size-btn hover-fill" type="button" aria-label="Larger text" disabled={textScale === TEXT_SIZES.at(-1)} onclick={() => (textScale = stepTextSize(textScale, 1))}>
+        <span class="a" aria-hidden="true">A</span>
+      </button>
+    </div>
     <fieldset class="themes">
       <legend>Theme</legend>
       {#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as const as [value, name] (value)}
@@ -986,6 +1006,52 @@
   .item:hover {
     background: var(--bg-sunk);
   }
+  /* smaller and larger text, the page staying under the open menu so the change shows */
+  .text-size {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 6px 4px 0 12px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font);
+  }
+  .text-size > span:first-child {
+    flex: 1 1 auto;
+    color: var(--ink-2);
+    font-size: var(--size-13);
+  }
+  .size-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .size-btn:disabled {
+    color: var(--ink-2);
+    opacity: 0.45;
+    cursor: default;
+  }
+  .a {
+    font: 700 1.25rem / 1 var(--font);
+  }
+  .a.small {
+    font-size: 0.875rem;
+  }
+  .pct {
+    min-width: 3.2em;
+    font-size: var(--size-13);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
   .themes {
     display: flex;
     flex-wrap: wrap;
@@ -1041,17 +1107,17 @@
     box-shadow: var(--shadow-sheet);
   }
 
+  /* the pins' column is only there on wide screens */
+  .pin-hint {
+    display: none;
+  }
   @media (min-width: 900px) {
-    .race,
-    .race.pinning {
+    .race {
       padding-bottom: 0;
     }
-    /* the pins take a column beside the article */
-    .race.pinning .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 15rem;
-      gap: 8px;
-      padding-right: var(--gutter);
+    /* room for the row of pins at the foot of the window */
+    .race.pinning {
+      padding-bottom: 60px;
     }
     .hud {
       position: sticky;
@@ -1093,12 +1159,33 @@
     .strip :global(.trail) {
       flex: 1 1 auto;
     }
+    /* the pins' column is kept from the start, so pinning never narrows the text */
     .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      gap: 8px;
       max-width: 1240px;
       margin: 0 auto;
+      padding-right: var(--gutter);
+    }
+    .race.pinning {
+      padding-bottom: 0;
     }
     .layout :global(.view) {
       max-width: none;
+    }
+    .pin-hint {
+      position: sticky;
+      top: 140px;
+      align-self: start;
+      display: block;
+      margin: 24px 0 0;
+      padding: 12px 14px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--ink-2);
+      font-size: var(--size-13);
+      line-height: 1.45;
     }
   }
 

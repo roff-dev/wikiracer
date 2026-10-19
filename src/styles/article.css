@@ -1,7 +1,13 @@
 /* Wikipedia's article HTML in race mode. Injected markup, so these are global rules scoped to
    .article. Wikipedia's own stylesheets are never loaded: the page takes the site's look. */
+/* The reader's text size (--text-scale, from the race menu) scales every size in the article,
+   captions and tables included, by redefining the size tokens inside it. */
 .article {
-  font-size: 1.0625rem;
+  --size-13: calc(0.8125rem * var(--text-scale, 1));
+  --size-16: calc(1rem * var(--text-scale, 1));
+  --size-20: calc(1.25rem * var(--text-scale, 1));
+  --size-25: calc(1.5625rem * var(--text-scale, 1));
+  font-size: calc(1.0625rem * var(--text-scale, 1));
   line-height: 1.6;
   font-weight: 420;
   overflow-wrap: break-word;
@@ -9,7 +15,7 @@
 
 @media (min-width: 900px) {
   .article {
-    font-size: 1.125rem;
+    font-size: calc(1.125rem * var(--text-scale, 1));
     line-height: 1.65;
   }
 }

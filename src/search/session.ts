@@ -93,6 +93,10 @@ export class SearchSession {
       },
       onBudget: (bytes) => this.set({ kind: 'budget', mb: Math.round(bytes / 1048576) }),
       onError: (reason) => this.set({ kind: 'error', reason }),
+      // another search on the same worker took over: offer Try again rather than wait forever
+      onCancelled: () => {
+        if (live()) this.set({ kind: 'error', reason: 'network' });
+      },
       onDone: async (r) => {
         this.explored = r.explored;
         if (r.distance === null || !r.dag || !r.featured) {

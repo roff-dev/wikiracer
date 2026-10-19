@@ -17,6 +17,7 @@
   import { clock, limitWords, plural } from '../data/share';
   import { REVEAL } from '../map/renderer';
   import { startTier } from '../map/tiers';
+  import { loadRace } from '../race/state';
   import { RoomApiError, getCourse, restingText, saveName, savedName, seatFor } from '../room/api';
   import { RoomSocket } from '../room/socket';
   import { SearchClient, supported } from '../search/client';
@@ -84,6 +85,14 @@
 
   $effect(() => {
     if (racingHere && room) shownRound = room.round;
+  });
+
+  // A reload once the round is over (phones reload a tab left in the background): a race this tab
+  // ran to its end shows its result again, map and shortest route included, not just the table
+  $effect(() => {
+    if (room?.phase !== 'standings' || shownRound === room.round || !me || me.status === 'watching') return;
+    const saved = loadRace(room.from, room.to, undefined, `wikiracer.room.${code}.${room.round}`);
+    if (saved && saved.status !== 'racing') shownRound = room.round;
   });
 
   // The course's search, started as soon as the course is set; a new course cancels the old one
@@ -214,14 +223,15 @@
     ({ waiting: 'Here', racing: 'Racing', finished: p.timeMs !== undefined ? `Finished in ${clock(p.timeMs / 1000)}` : 'Finished', gaveup: 'Gave up', dnf: "Didn't finish", watching: 'Watching', away: 'Away' })[p.status];
 
   const roomRace = $derived<RoomRace | null>(
-    room && startAt !== null && socket
+    room && socket && (startAt !== null || room.phase === 'standings')
       ? {
           from: room.from,
           to: room.to,
           key: `${code}.${room.round}`,
-          startAt: socket.local(startAt),
+          // a reload at the standings no longer knows the start; the result doesn't need it
+          startAt: socket.local(startAt ?? 0),
           limit,
-          endsAt: socket.local(startAt + limit * 60_000),
+          endsAt: socket.local((startAt ?? 0) + limit * 60_000),
           scoring,
           winner,
           myTimeMs: me?.timeMs ?? null,

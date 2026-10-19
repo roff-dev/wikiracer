@@ -1,6 +1,8 @@
 <script lang="ts">
   // Links pinned from the article on screen: tap one to follow it without scrolling back to it.
-  // A row above the race bar on phones, a column beside the article on wider screens.
+  // A row above the race bar on phones (at the foot of the window on small computers), a column
+  // beside the article on wide screens, where the race keeps the column whether or not anything's
+  // pinned, so the first pin doesn't move the text.
   import { displayTitle } from '../data/share';
 
   let { pins, onfollow, onunpin }: { pins: string[]; onfollow: (to: string, from: Element) => void; onunpin: (to: string) => void } = $props();
@@ -98,8 +100,14 @@
     stroke-linecap: round;
   }
 
-  /* beside the article, held in view while it scrolls */
+  /* the race bar moves to the top of the window here */
   @media (min-width: 900px) {
+    .pins {
+      bottom: 0;
+    }
+  }
+  /* beside the article, held in view while it scrolls */
+  @media (min-width: 1100px) {
     .pins {
       position: sticky;
       top: 140px;
