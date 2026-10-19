@@ -4,13 +4,15 @@
   // route, the par and the player's route, and settles into the result's map and text.
   import { flushSync, onDestroy, onMount, type Snippet } from 'svelte';
   import AllRoutes from './AllRoutes.svelte';
+  import Missed from './Missed.svelte';
   import RouteLine from './RouteLine.svelte';
   import { knownPar } from '../data/courses';
   import { clock, displayTitle, plural, scoreWords } from '../data/share';
   import { RevealDirector, type Label, type RevealBeat } from '../map/reveal';
   import { MapRenderer, REVEAL } from '../map/renderer';
   import { startTier } from '../map/tiers';
-  import { routeAvoiding } from '../search/dag';
+  import { missedSteps, routeAvoiding } from '../search/dag';
+  import type { Dag } from '../search/protocol';
   import { running, type SearchSession, type SessionEvent, type SessionStatus } from '../search/session';
   import { mapDateText } from '../site';
   import { checkRoute } from '../wiki/routecheck';
@@ -72,6 +74,11 @@
   let playerMissing = $state<number[]>([]);
   let showAll = $state(false);
   let announce = $state('');
+  // where the route left the shortest routes: the stop's index in the route, and the links that
+  // stayed on one (titles, most routes first; `more` beyond those)
+  let misses = $state<{ at: number; best: string[]; more: number }[]>([]);
+  let reviewing = $state<number | null>(null);
+  let reviewOpener: HTMLElement | null = null;
 
   let canvas = $state<HTMLCanvasElement>();
   let headline = $state<HTMLElement>();
@@ -176,6 +183,31 @@
     director?.finale(s.dag, s.featured, s.titles.map(displayTitle), { ids, titles: route.map(displayTitle), open: !finished });
     if (!director) leaveTakeover();
     void check(s.titles);
+    void findMisses(s.dag, ids);
+  }
+
+  const MAX_BEST = 20;
+  async function findMisses(d: Dag, ids: (number | null)[]) {
+    const found = missedSteps(d, ids);
+    if (!found.length || !session) return;
+    const names = await session.client.titles(found.flatMap((m) => m.best.slice(0, MAX_BEST))).catch(() => null);
+    if (!names) return;
+    let k = 0;
+    misses = found.map((m) => {
+      const n = Math.min(MAX_BEST, m.best.length);
+      const best = names.slice(k, (k += n));
+      return { at: m.at, best, more: m.best.length - n };
+    });
+  }
+
+  function review(i: number, opener: HTMLElement) {
+    reviewOpener = opener;
+    reviewing = i;
+  }
+
+  function endReview() {
+    reviewing = null;
+    reviewOpener?.focus({ preventScroll: true });
   }
 
   async function check(titles: string[]) {
@@ -356,6 +388,25 @@
       {/if}
     </div>
 
+    {#if misses.length}
+      <section class="missed">
+        <h3>Where {shared ? 'the race' : 'you'} left the shortest route</h3>
+        <ol>
+          {#each misses as m, i (m.at)}
+            {@const others = m.best.length - 1 + m.more}
+            <li>
+              <p>
+                <span class="miss-at">Click {m.at + 1}</span>
+                On {displayTitle(route[m.at]!)}, {shared ? 'the race' : 'you'} took <strong>{displayTitle(route[m.at + 1]!)}</strong>.
+                <strong>{displayTitle(m.best[0]!)}</strong>{others ? `, or ${plural(others, 'other link')},` : ''} would have kept {shared ? 'it' : 'you'} on a shortest route.
+              </p>
+              <button class="pill secondary" type="button" onclick={(e) => review(i, e.currentTarget)}>See them on the page</button>
+            </li>
+          {/each}
+        </ol>
+      </section>
+    {/if}
+
     {#if status.kind === 'found' && dag && session}
       {#if showAll}
         <h3 class="all-head">Every shortest route</h3>
@@ -367,6 +418,11 @@
     <p class="fresh">My map of Wikipedia's links is from {mapDateText}.</p>
   </div>
 </section>
+
+{#if reviewing !== null && misses[reviewing]}
+  {@const m = misses[reviewing]}
+  <Missed title={route[m.at]!} clicked={route[m.at + 1]!} best={m.best} {shared} onclose={endReview} />
+{/if}
 
 <style>
   .reveal {
@@ -546,6 +602,30 @@
     top: 5.5px;
     height: 3px;
     border-radius: 2px;
+  }
+  .missed {
+    margin: 0 0 28px;
+  }
+  .missed ol {
+    display: grid;
+    gap: 18px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .missed li {
+    padding-left: 14px;
+    border-left: 3px solid #ffd23f;
+  }
+  .missed p {
+    margin: 0 0 10px;
+    max-width: 60ch;
+  }
+  .missed .miss-at {
+    display: block;
+    color: var(--ink-2);
+    font-size: var(--size-13);
+    font-weight: 600;
   }
   .key.yours::after {
     background: #ffd23f;

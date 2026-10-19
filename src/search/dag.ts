@@ -74,3 +74,26 @@ export function stepper(dag: Dag): { next: number[][]; onward: Float64Array } {
   for (const list of succ) list.sort((a, b) => onward[b]! - onward[a]! || dag.ids[a]! - dag.ids[b]!);
   return { next: succ, onward };
 }
+
+// Where a route left the shortest routes: each stop that was on one (a node of the DAG) whose next
+// click wasn't one of that node's next steps. `ids` are the route's map ids, null where a title
+// isn't in the map. `at` is the stop's index in the route; `best` the next steps' map ids, most
+// routes first.
+export interface Miss {
+  at: number;
+  best: number[];
+}
+
+export function missedSteps(dag: Dag, ids: (number | null)[]): Miss[] {
+  const { succ } = adjacency(dag);
+  const node = new Map<number, number>();
+  dag.ids.forEach((id, i) => node.set(id, i));
+  const misses: Miss[] = [];
+  for (let i = 0; i < ids.length - 1; i++) {
+    const n = ids[i] === null ? undefined : node.get(ids[i]!);
+    if (n === undefined || !succ[n]!.length) continue;
+    const best = succ[n]!.sort((a, b) => dag.through[b]! - dag.through[a]! || dag.ids[a]! - dag.ids[b]!).map((j) => dag.ids[j]!);
+    if (ids[i + 1] === null || !best.includes(ids[i + 1]!)) misses.push({ at: i, best });
+  }
+  return misses;
+}
