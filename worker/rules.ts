@@ -3,9 +3,9 @@
 // Live phases: lobby → countdown → race → standings, then back to the lobby for the next course.
 // Countdown and race are one stored stage ('round'); which one it is follows from startAt.
 import { checkName, uniqueName } from './names.ts';
-import { LIMITS, type ErrorCode, type Limit, type Mode, type Phase, type PlayerState, type PlayerStatus, type RoomState, type Scoring, type StandingRow } from './protocol.ts';
+import { LIMITS, MAX_SEATS, type ErrorCode, type Limit, type Mode, type Phase, type PlayerState, type PlayerStatus, type RoomState, type Scoring, type StandingRow } from './protocol.ts';
 
-export const MAX_SEATS = 4;
+export { MAX_SEATS };
 export const COUNTDOWN_MS = 5000;
 // the default time limit, and the limit of rooms stored before the host could pick one
 export const DEFAULT_LIMIT: Limit = 30;
@@ -362,7 +362,7 @@ export function standings(room: Room, routeOf: (n: number) => string[] = () => [
   return rank(rows, scoringOf(room));
 }
 
-// Challenges: up to 4 results, one per seat token, the first one kept
+// Challenges: up to MAX_SEATS results, one per seat token, the first one kept
 export interface ChallengeResult {
   hash: string;
   name: string;

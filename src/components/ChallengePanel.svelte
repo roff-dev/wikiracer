@@ -4,6 +4,7 @@
   import ResultsTable, { type ResultRow } from './ResultsTable.svelte';
   import { RoomApiError, addResult, getCourse, restingText, saveName, savedName, seatFor, type ChallengeTable } from '../room/api';
   import { checkName } from '../../worker/names';
+  import { MAX_SEATS } from '../../worker/protocol';
 
   let {
     code,
@@ -44,7 +45,7 @@
         : c === 'resting'
           ? restingText()
           : c === 'full'
-            ? 'This challenge already has 4 results. Your result still counts for you: share it with the link.'
+            ? `This challenge already has ${MAX_SEATS} results. Your result still counts for you: share it with the link.`
             : c === 'name'
               ? 'Pick another name.'
               : c === 'exists'
@@ -104,7 +105,7 @@
     </form>
   {/if}
   {#if table?.full && !table.played}
-    <p class="problem">This challenge already has 4 results. Your result still counts for you: share it with the link.</p>
+    <p class="problem">This challenge already has {MAX_SEATS} results. Your result still counts for you: share it with the link.</p>
   {/if}
   {#if problem && !(table?.full && !table.played)}<p class="problem" role="alert">{problem}</p>{/if}
   {#if table}

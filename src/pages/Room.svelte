@@ -12,7 +12,7 @@
   import CopyButton from '../components/CopyButton.svelte';
   import Sheet from '../components/Sheet.svelte';
   import { normaliseCode, showCode } from '../../worker/names';
-  import { LIMITS, type ErrorCode, type PlayerState, type RoomState, type Scoring, type StandingRow } from '../../worker/protocol';
+  import { LIMITS, MAX_SEATS, type ErrorCode, type PlayerState, type RoomState, type Scoring, type StandingRow } from '../../worker/protocol';
   import { surprise, type Difficulty } from '../data/pools';
   import { clock, limitWords, plural } from '../data/share';
   import { REVEAL } from '../map/renderer';
@@ -132,7 +132,7 @@
   function onError(c: ErrorCode) {
     if (c === 'full') {
       stage = 'problem';
-      problem = 'This room is full (4 players).';
+      problem = `This room is full (${MAX_SEATS} players).`;
     } else if (c === 'name') {
       stage = 'name';
       nameProblem = 'Pick another name.';
@@ -360,18 +360,21 @@
         <section class="players" aria-labelledby="players-head">
           <h2 id="players-head">Players</h2>
           <ol class="seats" role="list">
-            {#each [1, 2, 3, 4] as n (n)}
-              {@const p = players.find((x) => x.n === n)}
-              <li class:me={n === you} class:empty={!p}>
-                <span class="no">{n}</span>
-                {#if p}
-                  <span class="who">{p.name}{n === you ? ' (you)' : ''}{p.n === room.host ? ', host' : ''}</span>
-                  <span class="st">{statusWord(p)}</span>
-                {:else}
-                  <span class="who">Waiting…</span>
-                {/if}
+            <!-- the players in seat order, then one row for the free seats, so eight rows of
+                 "Waiting…" never push Start off a phone's first screen -->
+            {#each [...players].sort((a, b) => a.n - b.n) as p (p.n)}
+              <li class:me={p.n === you}>
+                <span class="no">{p.n}</span>
+                <span class="who">{p.name}{p.n === you ? ' (you)' : ''}{p.n === room.host ? ', host' : ''}</span>
+                <span class="st">{statusWord(p)}</span>
               </li>
             {/each}
+            {#if players.length < MAX_SEATS}
+              <li class="empty">
+                <span class="no"></span>
+                <span class="who">Waiting… {plural(MAX_SEATS - players.length, 'seat')} free</span>
+              </li>
+            {/if}
           </ol>
           {#if inRound}<p class="quiet">A race is under way. You'll be in the next one.</p>{/if}
           {#if room.phase === 'lobby'}

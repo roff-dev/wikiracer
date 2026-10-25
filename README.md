@@ -13,7 +13,7 @@ I built Wikiracer to show what I can make end to end, from a data pipeline to a 
 - **A search across all of Wikipedia, with no search server.** I turn Wikipedia's 11 GB of SQL dumps into a map of 7 million articles and 713 million links, then encode it so the browser can find every shortest route by reading only a megabyte or so of it. It's hosted for free as static files.
 - **Showing an algorithm, not just its answer.** The reveal draws the breadth-first search as it really runs: two fronts growing from each end until they meet. I wrote the WebGL2 renderer myself so it can draw 50,000 nodes smoothly, even on a phone.
 - **A fair race on live Wikipedia.** Articles load straight from Wikipedia and are rewritten on the fly, so only real article links count, and there's no Back or Find to cheat with.
-- **Multiplayer on the free tier.** Live rooms for up to four players run on a Cloudflare Worker with a Durable Object per room, and their WebSockets hibernate between moves, so an idle room costs nothing.
+- **Multiplayer on the free tier.** Live rooms for up to eight players run on a Cloudflare Worker with a Durable Object per room, and their WebSockets hibernate between moves, so an idle room costs nothing.
 - **Keeping it up to date.** A scheduled GitHub Actions run rebuilds and republishes the map each month when a new dump comes out, and checks real searches before it goes live.
 
 ## Running it locally

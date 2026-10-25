@@ -8,6 +8,7 @@
   import ResultsTable, { type ResultRow } from '../components/ResultsTable.svelte';
   import ShareButton from '../components/ShareButton.svelte';
   import { normaliseCode, showCode } from '../../worker/names';
+  import { MAX_SEATS } from '../../worker/protocol';
   import { displayTitle } from '../data/share';
   import { RoomApiError, getCourse, restingText, seatFor, type ChallengeTable } from '../room/api';
   import { SearchClient, supported } from '../search/client';
@@ -69,7 +70,7 @@
         <p class="empty">No results yet. Be the first.</p>
       {/if}
       {#if info.full && !info.played}
-        <p class="note">This challenge already has 4 results. Race it anyway: your result still counts for you.</p>
+        <p class="note">This challenge already has {MAX_SEATS} results. Race it anyway: your result still counts for you.</p>
       {/if}
     </section>
     <div class="actions">

@@ -2,6 +2,8 @@
 // and the shapes the HTTP API returns. Shared by worker/ and src/room/.
 
 export type Mode = 'live' | 'challenge';
+// seats in a live room, and results on a challenge's table
+export const MAX_SEATS = 8;
 // 'clicks': fewest clicks wins, time breaks ties; 'time': first to the finish wins, on the room's clock
 export type Scoring = 'clicks' | 'time';
 // A live round's time limit in minutes; anyone still racing at the end didn't finish

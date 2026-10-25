@@ -4,7 +4,7 @@
   import Sheet from './Sheet.svelte';
   import CopyButton from './CopyButton.svelte';
   import { checkName, showCode } from '../../worker/names';
-  import type { Mode } from '../../worker/protocol';
+  import { MAX_SEATS, type Mode } from '../../worker/protocol';
   import { displayTitle } from '../data/share';
   import { RoomApiError, createCourse, restingText, saveName, savedName } from '../room/api';
   import { turnstileToken } from '../room/turnstile';
@@ -83,12 +83,12 @@
         <label class="mode" class:on={mode === 'live'}>
           <input type="radio" name="mode" value="live" bind:group={mode} />
           <span class="mode-name">Live room</span>
-          <span class="mode-desc">Race now, together. Up to 4 players, each on their own device.</span>
+          <span class="mode-desc">Race now, together. Up to {MAX_SEATS} players, each on their own device.</span>
         </label>
         <label class="mode" class:on={mode === 'challenge'}>
           <input type="radio" name="mode" value="challenge" bind:group={mode} />
           <span class="mode-name">Challenge link</span>
-          <span class="mode-desc">Play any time. Up to 4 results on one table.</span>
+          <span class="mode-desc">Play any time. Up to {MAX_SEATS} results on one table.</span>
         </label>
       </fieldset>
       <label class="name">

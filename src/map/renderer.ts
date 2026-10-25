@@ -16,8 +16,9 @@ export const REVEAL = {
   finish: '#FF74AC',
   shortest: '#FFFFFF',
   players: ['#FFD23F', '#8F8BFF', '#FF74AC', '#4FD8A4'],
-  // other players' routes in a room: clear of the fronts' emerald and magenta and of your yellow
-  others: ['#8F8BFF', '#5CC8FF', '#FF9F43'],
+  // other players' routes in a room (up to 7): clear of the fronts' emerald and magenta and of
+  // your yellow, each at least 7:1 on the void
+  others: ['#8F8BFF', '#5CC8FF', '#FF9F43', '#B6E35A', '#D69CFF', '#FF7A6B', '#D8C08A'],
 };
 
 // Layout: the start and finish centres sit 3.2 rings apart; one ring per click of distance.
@@ -352,7 +353,7 @@ export class MapRenderer {
   }
 
   // A course (layer 3): the stops' map ids from start to finish. Course 0 is the shortest route,
-  // drawn on top; 1–4 are players. Stops that aren't drawn on the map (a player's detour) sit on
+  // drawn on top; 1–8 are players. Stops that aren't drawn on the map (a player's detour) sit on
   // an arc between start and finish, below or above by course number, so routes stay apart;
   // stops shared with the map, and so with the shortest route, merge.
   // An open course (a race given up) stops short of the finish: its last stop is placed like the
@@ -361,7 +362,7 @@ export class MapRenderer {
     const n = ids.length - 1;
     const span = open ? n + 1 : n;
     const S0 = CENTRES[0]!, F0 = CENTRES[1]!;
-    const bulge = [-1.3, -1.3, 1.3, -2.2, 2.2][index % 5]!;
+    const bulge = [-1.3, -1.3, 1.3, -2.2, 2.2, -1.75, 1.75, -2.65, 2.65][index % 9]!;
     const positions = ids.map((id, i): [number, number] => {
       if (i === 0) return [...S0];
       if (i === n && !open) return [...F0];
