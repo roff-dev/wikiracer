@@ -1,12 +1,19 @@
 // Step 5 of the map pipeline: pushes the chunk files to the four data sites (GitHub Pages).
 //
 //   node pipeline/publish.mjs [--map <dir>] [--dry-run] [--probe-only]
+//   node pipeline/publish.mjs --restore [--rev <git rev>]
 //
 // --map defaults to the newest finished pipeline/work/map-<run>/ and must match public/map.json.
 // Each data repo is rebuilt as a single fresh commit in pipeline/work/publish/<repo>/ and
 // force-pushed to main, so an old version leaves the repo's history instead of piling up in it.
 // --dry-run builds and audits the repos without pushing; --probe-only skips straight to waiting
 // for the sites. After the push it waits until every chunk answers a 1-byte Range request.
+//
+// A 1 GB Pages site can't hold two versions, so pushing takes the live map off the data sites
+// until the site's own map.json follows. Before pushing, each repo's current main is kept on a
+// `previous` branch; --restore moves main back to it (a ref change on GitHub, nothing uploaded)
+// and waits for the map that public/map.json names at --rev (default HEAD) to answer again.
+// Branch changes go through `gh api`, so gh needs a token with Contents write on the data repos.
 import { execFileSync } from 'node:child_process';
 import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -21,28 +28,99 @@ const args = process.argv.slice(2);
 const opt = (name) => { const i = args.indexOf(name); return i < 0 ? undefined : args[i + 1]; };
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const work = join(root, 'pipeline', 'work');
-const mapDir = opt('--map') ?? newestWorkDir(work, 'map');
 const dryRun = args.includes('--dry-run');
 const probeOnly = args.includes('--probe-only');
 const t0 = Date.now();
 const log = (...a) => console.log(((Date.now() - t0) / 1000).toFixed(0).padStart(5) + 's', ...a);
+const repoOf = (site) => new URL(site).pathname.split('/').filter(Boolean)[0];
 
+// Which files each site serves: [[{ name, size }]] by site; size null when it isn't known here.
+function placement(m, sizeOf = () => null) {
+  const placed = m.sites.map(() => []);
+  for (const [table, owners] of Object.entries(m.files)) {
+    owners.forEach((s, k) => {
+      const name = `${table}-${String(k).padStart(2, '0')}.bin`;
+      placed[s].push({ name, size: sizeOf(name) });
+    });
+  }
+  return placed;
+}
+
+// How many of site s's files don't yet answer a 1-byte Range request (with the right size, when known).
+async function probe(m, s, files) {
+  let missing = 0;
+  for (const { name, size } of files) {
+    try {
+      const res = await fetch(`${m.sites[s]}v${m.version}/${name}`, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' });
+      await res.arrayBuffer();
+      if (res.status === 206 && (size === null || res.headers.get('content-range') === `bytes 0-0/${size}`)) continue;
+    } catch { /* not up yet */ }
+    missing++;
+  }
+  return missing;
+}
+
+// Waits until every site serves all its files, or exits 1 after PROBE_LIMIT.
+async function waitForSites(m, placed, rerun) {
+  const since = Date.now();
+  const left = new Set(m.sites.keys());
+  while (left.size) {
+    for (const s of [...left]) {
+      if (await probe(m, s, placed[s])) continue;
+      left.delete(s);
+      log(`${repoOf(m.sites[s])}: all ${placed[s].length} files of v${m.version} answer Range, ${((Date.now() - since) / 60_000).toFixed(1)} min in`);
+    }
+    if (!left.size) break;
+    if (Date.now() - since > PROBE_LIMIT) {
+      log(`still waiting on ${[...left].map((s) => repoOf(m.sites[s])).join(', ')}: check each repo's Settings › Pages and its deployment, then ${rerun}`);
+      process.exit(1);
+    }
+    await new Promise((r) => setTimeout(r, PROBE_EVERY));
+  }
+}
+
+const gh = (...a) => execFileSync('gh', ['api', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+const refPath = (repo, branch) => `repos/${OWNER}/${repo}/git/refs/heads/${branch}`;
+const shaOf = (repo, branch) => JSON.parse(gh(refPath(repo, branch))).object.sha;
+function setBranch(repo, branch, sha) {
+  try {
+    gh('-X', 'PATCH', refPath(repo, branch), '-f', `sha=${sha}`, '-F', 'force=true');
+  } catch {
+    gh('-X', 'POST', `repos/${OWNER}/${repo}/git/refs`, '-f', `ref=refs/heads/${branch}`, '-f', `sha=${sha}`);
+  }
+}
+// Whether a repo's main already serves this version (then it isn't worth keeping as `previous`).
+function mainHas(repo, version) {
+  try { gh(`repos/${OWNER}/${repo}/contents/v${version}?ref=main`); return true; } catch { return false; }
+}
+
+if (args.includes('--restore')) {
+  const rev = opt('--rev') ?? 'HEAD';
+  const live = JSON.parse(execFileSync('git', ['show', `${rev}:public/map.json`], { cwd: root, encoding: 'utf8' }));
+  for (const site of live.sites) {
+    const repo = repoOf(site);
+    // not pushed to yet (an older `previous` there could be an even older map)
+    if (mainHas(repo, live.version)) { log(`${repo}: main already serves v${live.version}`); continue; }
+    const sha = shaOf(repo, 'previous');
+    setBranch(repo, 'main', sha);
+    log(`${repo}: main moved back to ${sha.slice(0, 7)}`);
+  }
+  await waitForSites(live, placement(live), 'rerun --restore');
+  log(`all data sites serve v${live.version} again, the map the site names`);
+  process.exit(0);
+}
+
+const mapDir = opt('--map') ?? newestWorkDir(work, 'map');
 const map = JSON.parse(readFileSync(join(root, 'public', 'map.json'), 'utf8'));
 const meta = JSON.parse(readFileSync(join(mapDir, 'meta.json'), 'utf8'));
 if (map.sites.join() !== SITES.join()) throw new Error('public/map.json names other data sites; rerun encode.mjs');
 if (meta.run !== map.version) throw new Error(`${mapDir} holds ${meta.run} but public/map.json is ${map.version}; rerun encode.mjs`);
 
 const dumpDay = new Date(map.dumpDate + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-const repoName = (s) => new URL(map.sites[s]).pathname.split('/').filter(Boolean)[0];
+const repoName = (s) => repoOf(map.sites[s]);
 
 // Which files each site serves, with the size the probe expects.
-const placed = map.sites.map(() => []);
-for (const [table, owners] of Object.entries(map.files)) {
-  owners.forEach((s, k) => {
-    const name = `${table}-${String(k).padStart(2, '0')}.bin`;
-    placed[s].push({ name, size: statSync(join(mapDir, name)).size });
-  });
-}
+const placed = placement(map, (name) => statSync(join(mapDir, name)).size);
 
 const README = `# Wikiracer map, part {part} of ${map.sites.length}
 
@@ -89,18 +167,6 @@ function audit(s, dir) {
   return { history: git(dir, 'log', '--format=%an <%ae>'), problems };
 }
 
-async function probe(s) {
-  const pending = new Map(placed[s].map((f) => [f.name, f.size]));
-  for (const [name, size] of [...pending]) {
-    try {
-      const res = await fetch(`${map.sites[s]}v${map.version}/${name}`, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' });
-      await res.arrayBuffer();
-      if (res.status === 206 && res.headers.get('content-range') === `bytes 0-0/${size}`) pending.delete(name);
-    } catch { /* not up yet */ }
-  }
-  return pending.size;
-}
-
 if (!probeOnly) {
   for (let s = 0; s < map.sites.length; s++) {
     const dir = build(s);
@@ -113,6 +179,15 @@ if (!probeOnly) {
     log(`dry run: repos built in ${join(work, 'publish')}, nothing pushed`);
     process.exit(0);
   }
+  // Keep what each site serves now, so --restore can put it back. All four before any push: a
+  // `previous` left over from an older refresh would restore the wrong map.
+  for (let s = 0; s < map.sites.length; s++) {
+    const repo = repoName(s);
+    if (mainHas(repo, map.version)) { log(`${repo}: main already holds v${map.version}, previous left as it is`); continue; }
+    const sha = shaOf(repo, 'main');
+    setBranch(repo, 'previous', sha);
+    log(`${repo}: kept main ${sha.slice(0, 7)} as previous`);
+  }
   for (let s = 0; s < map.sites.length; s++) {
     const dir = join(work, 'publish', repoName(s));
     const remote = `https://github.com/${OWNER}/${repoName(s)}.git`;
@@ -121,21 +196,5 @@ if (!probeOnly) {
   }
 }
 
-const pushed = Date.now();
-const left = new Set(map.sites.keys());
-while (left.size) {
-  for (const s of [...left]) {
-    const missing = await probe(s);
-    if (!missing) {
-      left.delete(s);
-      log(`${repoName(s)}: all ${placed[s].length} files answer Range, ${((Date.now() - pushed) / 60_000).toFixed(1)} min after the push`);
-    }
-  }
-  if (!left.size) break;
-  if (Date.now() - pushed > PROBE_LIMIT) {
-    log(`still waiting on ${[...left].map(repoName).join(', ')}: check each repo's Settings › Pages and its deployment, then rerun with --probe-only`);
-    process.exit(1);
-  }
-  await new Promise((r) => setTimeout(r, PROBE_EVERY));
-}
+await waitForSites(map, placed, 'rerun with --probe-only');
 log('all data sites are live. Next: npm run map:check, then commit and push public/ so map.json and the indexes go live together');

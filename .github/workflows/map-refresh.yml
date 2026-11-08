@@ -5,6 +5,8 @@
 # about 25 minutes here), pushes the chunk files to the four data sites, checks real searches
 # against them, then commits the site's new map.json, indexes and course files, which redeploys
 # the site. Between the data push and the site redeploy, searches show the maintenance state.
+# If any step after the push fails, the data sites are moved back to the map the site still
+# names, so a failed refresh leaves the live site as it was.
 #
 # Needs one secret, MAP_PUSH_TOKEN: a fine-grained token for the wikiracer-map organisation with
 # Contents read and write on map-1 … map-4. The site commit uses this repo's own token.
@@ -92,10 +94,13 @@ jobs:
           git config --global user.email kieronoates@hotmail.co.uk
 
       # waits until every chunk answers a Range request on its data site
+      # keeps each data repo's current main on a `previous` branch first, for the restore below
       - name: Publish to the data sites
+        id: publish
         if: steps.check.outputs.go == 'true'
         env:
           MAP_PUSH_TOKEN: ${{ secrets.MAP_PUSH_TOKEN }}
+          GH_TOKEN: ${{ secrets.MAP_PUSH_TOKEN }}
         run: |
           git config --global url."https://x-access-token:${MAP_PUSH_TOKEN}@github.com/wikiracer-map/".insteadOf "https://github.com/wikiracer-map/"
           node pipeline/publish.mjs
@@ -115,3 +120,11 @@ jobs:
           # main may have moved during the build; the refresh only touches public/
           git pull -q --rebase "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" main
           git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" HEAD:main
+
+      # the publish, the check or the site commit failed: point the data sites back at the map
+      # this run started from, which is still the one the live site names
+      - name: Put the data sites back
+        if: failure() && steps.publish.outcome != 'skipped' && steps.check.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.MAP_PUSH_TOKEN }}
+        run: node pipeline/publish.mjs --restore --rev ${{ github.sha }}
