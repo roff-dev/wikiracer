@@ -132,16 +132,24 @@ const rest = { medium: byLabel.medium.slice(PER_LABEL).map(strip), hard: byLabel
 const daily = extendDaily(before ?? { launch, days: [] }, rest, until);
 if (before) assertAppendOnly(before, daily);
 const dailyUsed = new Set(daily.days.map((x) => `${x.start}>${x.finish}`));
-// Days already published name titles from an older map; a title missing now still resolves
-// through Wikipedia's redirects, so this only warns.
-let stale = 0;
+// Days already published were measured on an older map: their d and k are measured again on this
+// one, since that's what the site will search. A title missing now still resolves through
+// Wikipedia's redirects, so that day keeps its old numbers and this only warns.
+let stale = 0, remeasured = 0;
 if (before) {
   const want = new Set(before.days.flatMap((x) => [x.start, x.finish]));
-  const found = new Set();
-  for (let i = 0; i < N; i++) { const t = title(i); if (want.has(t)) found.add(t); }
-  stale = before.days.filter((x) => !found.has(x.start) || !found.has(x.finish)).length;
+  const found = new Map();
+  for (let i = 0; i < N; i++) { const t = title(i); if (want.has(t)) found.set(t, i); }
+  for (const x of daily.days.slice(0, before.days.length)) {
+    if (!found.has(x.start) || !found.has(x.finish)) { stale++; continue; }
+    const r = bfs.search(found.get(x.start), found.get(x.finish));
+    if (r.d !== x.d || r.k !== x.k) {
+      if (x.date >= today) log(`daily ${x.date} ${x.start} → ${x.finish}: was ${x.d} (${x.k}), now ${r.d} (${r.k})`);
+      x.d = r.d; x.k = r.k; remeasured++;
+    }
+  }
 }
-log(`daily: ${before ? before.days.length : 0} existing days kept, ${daily.days.length - (before?.days.length ?? 0)} added, through ${daily.days.at(-1).date}${stale ? `; ${stale} existing days name a title that's no longer in the map (check them)` : ''}`);
+log(`daily: ${before ? before.days.length : 0} existing days kept (${remeasured} with new d or k), ${daily.days.length - (before?.days.length ?? 0)} added, through ${daily.days.at(-1).date}${stale ? `; ${stale} existing days name a title that's no longer in the map (check them)` : ''}`);
 
 // Demo replay: a pair in no pool, daily or classic list
 const inPools = new Set(Object.values(byLabel).flatMap((l) => l.slice(0, PER_LABEL)).map((p) => `${p.start}>${p.finish}`));

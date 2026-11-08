@@ -36,11 +36,15 @@ export function extendDaily(schedule, candidates, until) {
   return { launch: schedule.launch, days };
 }
 
-// Fails unless every day of `before` is in `after`, at the same place and unchanged.
+// What a published day promises: the course itself. d and k describe the map it's searched on,
+// so they're re-measured with each new map and aren't part of the check.
+const COURSE = ['date', 'start', 'finish', 'label'];
+
+// Fails unless every day of `before` is in `after`, at the same place with the same course.
 export function assertAppendOnly(before, after) {
   if (before.launch !== after.launch) throw new Error(`daily: launch changed from ${before.launch} to ${after.launch}`);
   before.days.forEach((x, i) => {
     const y = after.days[i];
-    if (!y || JSON.stringify(x) !== JSON.stringify(y)) throw new Error(`daily: ${x.date} would change`);
+    if (!y || COURSE.some((f) => x[f] !== y[f])) throw new Error(`daily: ${x.date} would change`);
   });
 }
